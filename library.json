@@ -1,0 +1,22 @@
+{
+  "name":"Arduino-HomeKit-ESP8266",
+  "description":"Apple HomeKit accessory server library for ESP8266 Arduino core.",
+  "keywords":"homekit,esp8266,esp32,apple homekit",
+  "authors":
+  {
+    "name": "Mixiaoxiao (Wang Bin)",
+    "maintainer": true
+  },
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266.git"
+  },
+  "version": "1.0.0",
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "espressif8266",
+  "build": {
+    "libCompatMode": 2
+  }
+}

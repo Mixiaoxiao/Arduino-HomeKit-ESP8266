@@ -1,0 +1,124 @@
+SketchSize: 473312 B
+FreeSketchSpace: 487424 B
+FlashChipSize: 4194304 B
+FlashChipRealSize: 4194304 B
+FlashChipSpeed: 40000000
+SdkVersion: 2.2.2-dev(a58da79)
+FullVersion: SDK:2.2.2-dev(a58da79)/Core:2.6.3=20603000/lwIP:STABLE-2_1_2_RELEASE/glue:1.2-16-ge23a07e/BearSSL:89454af
+CpuFreq: 160MHz
+FreeHeap: 26152 B
+ResetInfo: Fatal exception:0 flag:6 (EXT_SYS_RST) epc1:0x00000000 epc2:0x00000000 epc3:0x00000000 excvaddr:0x00000000 depc:0x00000000
+ResetReason: External System
+OFF
+>>> [    111] HomeKit: Starting server
+*** [Storage] homekit_storage_init: EEPROM max: 4096 B
+*** [Storage] homekit_storage_init: Pairing_data size: 80 
+*** [Storage] homekit_storage_init: MAX pairing count: 16 
+*** [Storage] homekit_storage_init: _EEPROM_start: 0xfb000 (1028096)
+*** [Storage] homekit_storage_init: _SPIFFS_start: 0xeb000 (962560)
+>>> [    142] HomeKit: Using existing accessory ID: F4:E1:C6:6F:24:6C
+>>> [    148] HomeKit: Preinit pairing context
+>>> [    152] HomeKit: Using user-specified password: 111-11-111
+=== integer.c s_mp_exptmod, winsize=6, redmode=0
+=== crypto_srp_init took: 6041ms
+=== integer.c s_mp_exptmod, winsize=5, redmode=0
+=== crypto_srp_get_public_key took: 3094ms
+>>> [   9320] HomeKit: arduino_homekit_preinit success
+>>> [   9325] HomeKit: Configuring mDNS
+>>> [   9328] HomeKit: MDNS.begin->ESP8266_LED_4CBB41
+>>> [   9335] HomeKit: Init server over
+>>> [  10540] HomeKit: heap: 22696, sockets: 0
+>>> [  12943] HomeKit: WiFi connected, ip: 192.168.1.100, mask: 255.255.255.0, gw: 192.168.1.253
+>>> [  12952] HomeKit: MDNS is restarted
+>>> [  15545] HomeKit: heap: 21376, sockets: 0
+>>> [  16755] HomeKit: WiFiServer receives a new client (current 0, max 4)
+>>> [  16762] HomeKit: Got new client connection: local 192.168.1.100:5556, remote 192.168.1.101:51130
+>>> [  16772] HomeKit: [Client 1073703676] Pair Setup Step 1/3
+### [  16779] pair_setup took      7ms
+>>> [  18921] HomeKit: [Client 1073703676] Pair Setup Step 2/3
+=== integer.c s_mp_exptmod, winsize=6, redmode=0
+=== integer.c s_mp_exptmod, winsize=5, redmode=0
+=== crypto_srp_compute_key took: 12105ms
+### [  31049] pair_setup took  12128ms
+>>> [  31053] HomeKit: heap: 18920, sockets: 1
+>>> [  31171] HomeKit: [Client 1073703676] Pair Setup Step 3/3
+>>> [  31946] HomeKit: Added pairing with CF87DA6B-7078-44BB-AC04-27B6F2B26D37
+>>> [  32019] HomeKit: Free saved_preinit_pairing_context
+>>> [  32025] HomeKit: [Client 1073703676] Successfully paired
+### [  32030] pair_setup took    859ms
+>>> [  32107] HomeKit: [Client 1073703676] Disconnected!
+>>> [  32112] HomeKit: [Client 1073703676] Closing client connection
+>>> [  32139] HomeKit: WiFiServer receives a new client (current 0, max 4)
+>>> [  32146] HomeKit: Got new client connection: local 192.168.1.100:5556, remote 192.168.1.101:51131
+>>> [  32156] HomeKit: [Client 1073699516] Pair Verify Step 1/2
+### [  32478] pair_verify took    322ms
+>>> [  32481] HomeKit: Free heap: 21040
+>>> [  32517] HomeKit: [Client 1073699516] Pair Verify Step 2/2
+>>> [  32523] HomeKit: [Client 1073699516] Found pairing with CF87DA6B-7078-44BB-AC04-27B6F2B26D37
+>>> [  33302] HomeKit: [Client 1073699516] Verification successful, secure session established
+### [  33310] pair_verify took    794ms
+>>> [  33314] HomeKit: Free heap: 21152
+>>> [  33518] HomeKit: [Client 1073699516] Get Accessories
+### [  33560] get_accessories took     43ms
+>>> [  33642] HomeKit: [Client 1073699516] Update Characteristics
+### [  33652] update_characteristics took     10ms
+>>> [  33679] HomeKit: [Client 1073699516] Update Characteristics
+### [  33689] update_characteristics took     10ms
+>>> [  33735] HomeKit: [Client 1073699516] Update Characteristics
+### [  33745] update_characteristics took     10ms
+>>> [  33762] HomeKit: [Client 1073699516] Get Characteristics
+>>> [  35874] HomeKit: [Client 1073699516] Get Characteristics
+>>> [  36056] HomeKit: heap: 19672, sockets: 1
+>>> [  36280] HomeKit: [Client 1073699516] Update Characteristics
+accessory identify
+ON  100 (pwm:    0 of 1023)
+OFF
+ON  100 (pwm:    0 of 1023)
+OFF
+ON  100 (pwm:    0 of 1023)
+OFF
+### [  36899] update_characteristics took    619ms
+>>> [  39555] HomeKit: [Client 1073699516] Update Characteristics
+accessory identify
+ON  100 (pwm:    0 of 1023)
+OFF
+ON  100 (pwm:    0 of 1023)
+OFF
+ON  100 (pwm:    0 of 1023)
+OFF
+### [  40174] update_characteristics took    619ms
+>>> [  41060] HomeKit: heap: 21688, sockets: 1
+>>> [  44367] HomeKit: [Client 1073699516] Get Characteristics
+>>> [  45699] HomeKit: [Client 1073699516] Update Characteristics
+OFF
+ON   34 (pwm:  675 of 1023)
+### [  45712] update_characteristics took     13ms
+>>> [  46062] HomeKit: heap: 21688, sockets: 1
+>>> [  46724] HomeKit: [Client 1073699516] Update Characteristics
+ON   78 (pwm:  225 of 1023)
+ON   78 (pwm:  225 of 1023)
+### [  46740] update_characteristics took     16ms
+>>> [  47070] HomeKit: [Client 1073699516] Update Characteristics
+ON  100 (pwm:    0 of 1023)
+ON  100 (pwm:    0 of 1023)
+### [  47085] update_characteristics took     15ms
+>>> [  51063] HomeKit: heap: 21688, sockets: 1
+>>> [  55120] HomeKit: [Client 1073699516] Update Characteristics
+OFF
+### [  55130] update_characteristics took     10ms
+>>> [  55832] HomeKit: [Client 1073699516] Update Characteristics
+ON  100 (pwm:    0 of 1023)
+### [  55843] update_characteristics took     11ms
+>>> [  56065] HomeKit: heap: 21728, sockets: 1
+>>> [  57271] HomeKit: [Client 1073699516] Update Characteristics
+OFF
+### [  57280] update_characteristics took      9ms
+>>> [  57579] HomeKit: [Client 1073699516] Update Characteristics
+ON  100 (pwm:    0 of 1023)
+### [  57591] update_characteristics took     12ms
+>>> [  59216] HomeKit: [Client 1073699516] Update Characteristics
+OFF
+### [  59225] update_characteristics took      9ms
+>>> [  61067] HomeKit: heap: 21728, sockets: 1
+
+>>> [1086714] HomeKit: heap: 23360, sockets: 0
