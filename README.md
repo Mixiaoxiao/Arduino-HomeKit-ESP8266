@@ -1,6 +1,6 @@
 # Arduino Homekit ESP8266 
 
-### Apple HomeKit accessory server library for ESP8266 Arduino
+## Apple HomeKit accessory server library for ESP8266 Arduino
 
 This Arduino library is a native Apple HomeKit accessory implementation for the ESP8266, and works without any additional bridges.
 
@@ -12,12 +12,17 @@ Enjoy the "one-key" build, "one-key" upload, and work to link various other Ardu
 
 Here is a [discussion](https://github.com/HomeACcessoryKid/Arduino-HomeKit/issues/1) about the RTOS is required for running Apple HomeKit, and this project is a proof of concept that Apple HomeKit can be implemented and work fine without the RTOS.
 
-### Setup code of the example sketch
+## Preview
+
+![Preview](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/preview.jpg) 
+
+
+## Setup code of the example sketch
 
 ``111-11-111``
 
 
-### Usage
+## Usage
 
 1. Define your accessory in a .c file to enjoy the  convenient "Macro" style declaration. You can also define your accessory in a .ino file using C++ code.
 	```C
@@ -47,7 +52,7 @@ Here is a [discussion](https://github.com/HomeACcessoryKid/Arduino-HomeKit/issue
 	```
 Done.
 
-### Performance 
+## Performance 
 
 Notice: You should set the ESP8266 CPU to run at 160MHz (at least during the pairing process), to avoid the tcp-socket disconnection from iOS device caused by timeout.
 
@@ -61,7 +66,7 @@ Notice: You should set the ESP8266 CPU to run at 160MHz (at least during the pai
 All pairing process takes ~14s after you input the setup-code on your iPhone. Notice that Preinit require ~9s before you can start to pair.
 
 
-### Heap (memory)
+## Heap (memory)
 
 The heap is critical for ESP8266 with full TCP/IP support. ESP8266 easily crashes when the memory is lower than ~5000.
 
@@ -76,14 +81,14 @@ Here are the free heap values of running the example sketch:
 * Paired and no iOS device connected: ~23400
 
 
-### WolfSSL
+## WolfSSL
 
 * Based on wolfssl-3.13.0-stable.
 * Clean source code: the unused files are removed.
 * `CURVE25519_SMALL` and `ED25519_SMALL`: ESP8266 can not directly run without `SMALL` defined since the memory is not sufficient. But the NO `SMALL` version is faster. I mark the big `ge_precomp base[32][8]` with PROGMEM to store it in Flash (around 70KB). Also the `ge_double_scalarmult_vartime` can not run caused by lack of heap. I define `ESP_GE_DOUBLE_SCALARMULT_VARTIME_LOWMEM` in `user_settings.h` to use LOWMEM version of `ge_double_scalarmult_vartime` in `ge_low_mem.c`. This is a trade-off of performance and memory. If you want more Flash space, you should define `CURVE25519_SMALL` and `ED25519_SMALL` and undefine `ESP_GE_DOUBLE_SCALARMULT_VARTIME_LOWMEM` in `user_settings.h`.
 * `integer.c`(big integer operations): `MP_16BIT` and `ESP_FORCE_S_MP_EXPTMOD` are defined for better performance in ESP8266. `ESP_INTEGER_WINSIZE` (value is 3) is defined to avoid crash caused by memory exhaust and the values of {3, 4, 5} are of similar performance (this will lead the Pair Verify Steps take 1.2s + 0.9s).
 
-### Storage
+## Storage
 
 * The pairing data is stored in the `EEPROM` address in ESP8266 Arduino core.
 * This project does not use the `EEPROM` library with data-cache to reduce memory use (directly call flash_read and write). 
@@ -93,14 +98,14 @@ Here are the free heap values of running the example sketch:
 * This project do NOT use `FS(file system)`, so you can use `FS` freely.
 
 
-### WatchDog
+## WatchDog
 
 * There are software and hardware watchdogs in ESP8266 Arduino core. The heavy crypto computing will lead to watchdog reset.
 * There are disable/enable api of software-watchdog in ESP8266 Arduino core.
 * I found the [esp_hw_wdt](https://github.com/ComSuite/esp_hw_wdt) to disable/enable the hardware-watchdog.
 * The two watchdogs are disabled while `Preinit` and `Pair Setup Step 2/3`.
 
-### Recommended settings in IDE
+## Recommended settings in IDE
 
 * Module: Generic ESP8266 Module (to enable full settings)
 * FlashSize: at least 470KB for sketch (see `WolfSSL` section if you want a smaller sketch) 
@@ -112,25 +117,25 @@ Here are the free heap values of running the example sketch:
 * Erase Flash: select `All Flash Contents` when you first upload
 * CPU Frequency: 160MHz (must)
 
-### Arduino port
+## Arduino port
 
 * `ESP8266WiFi` (WiFiServer and WiFiClient) is used for tcp connection.
 * `ESP8266mDNS` is used for advertising (Bonjour) 
 
-### TODO
+## TODO
 
 * ESP32 Arduino version (ESP32 Arduino is base on RTOS and it is not hard to port).
 
 
-### More examples and demos
+## More examples and demos
 
 * Check [esp-homekit-demo](https://github.com/maximkulkin/esp-homekit-demo)
 
-### Troubleshooting
+## Troubleshooting
 
 * Check your serial output with [example_serial_output.txt](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/example_serial_output.txt)
 
-### Thanks
+## Thanks
 - [esp-homekit](https://github.com/maximkulkin/esp-homekit)
 - [esp-homekit-demo](https://github.com/maximkulkin/esp-homekit-demo)
 - [esp_hw_wdt](https://github.com/ComSuite/esp_hw_wdt)
