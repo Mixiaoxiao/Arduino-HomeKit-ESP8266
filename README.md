@@ -1,8 +1,8 @@
-# Arduino Homekit ESP8266 
+# Arduino HomeKit ESP8266 
 
 ## Apple HomeKit accessory server library for ESP8266 Arduino
 
-This Arduino library is a native Apple HomeKit accessory implementation for the ESP8266, and works without any additional bridges.
+This Arduino library is a native Apple HomeKit accessory implementation for the [ESP8266 Arduino core](https://github.com/esp8266/Arduino), and works without any additional bridges.
 
 This project is mainly based on [esp-homekit](https://github.com/maximkulkin/esp-homekit) for [ESP-OPEN-RTOS](https://github.com/SuperHouse/esp-open-rtos).
 
@@ -85,15 +85,15 @@ Here are the free heap values of running the example sketch:
 
 * Based on wolfssl-3.13.0-stable.
 * Clean source code: the unused files are removed.
-* `CURVE25519_SMALL` and `ED25519_SMALL`: ESP8266 can not directly run without `SMALL` defined since the memory is not sufficient. But the NO `SMALL` version is faster. I mark the big `ge_precomp base[32][8]` with PROGMEM to store it in Flash (around 70KB). Also the `ge_double_scalarmult_vartime` can not run caused by lack of heap. I define `ESP_GE_DOUBLE_SCALARMULT_VARTIME_LOWMEM` in `user_settings.h` to use LOWMEM version of `ge_double_scalarmult_vartime` in `ge_low_mem.c`. This is a trade-off of performance and memory. If you want more Flash space, you should define `CURVE25519_SMALL` and `ED25519_SMALL` and undefine `ESP_GE_DOUBLE_SCALARMULT_VARTIME_LOWMEM` in `user_settings.h`.
-* `integer.c`(big integer operations): `MP_16BIT` and `ESP_FORCE_S_MP_EXPTMOD` are defined for better performance in ESP8266. `ESP_INTEGER_WINSIZE` (value is 3) is defined to avoid crash caused by memory exhaust and the values of {3, 4, 5} are of similar performance (this will lead the Pair Verify Steps take 1.2s + 0.9s).
+* `CURVE25519_SMALL` and `ED25519_SMALL`: ESP8266 can not directly run without `SMALL` defined since the memory is not sufficient. But the NO `SMALL` version is faster. I mark the big `ge_precomp base[32][8]` with PROGMEM to store it in Flash (around 70KB). Also the `ge_double_scalarmult_vartime` can not run caused by lack of heap. I define `ESP_GE_DOUBLE_SCALARMULT_VARTIME_LOWMEM` in `user_settings.h` to use LOWMEM version of `ge_double_scalarmult_vartime` in `ge_low_mem.c`. This is a trade-off of performance and memory. If you want more Flash space, you should define `CURVE25519_SMALL` and `ED25519_SMALL` and undefine `ESP_GE_DOUBLE_SCALARMULT_VARTIME_LOWMEM` in `user_settings.h` (this will lead the Pair Verify Steps to take 1.2s + 0.9s).
+* `integer.c`(big integer operations): `MP_16BIT` and `ESP_FORCE_S_MP_EXPTMOD` are defined for better performance in ESP8266. `ESP_INTEGER_WINSIZE` (value is 3) is defined to avoid crash caused by memory exhaust and the values of {3, 4, 5} are of similar performance.
 
 ## Storage
 
 * The pairing data is stored in the `EEPROM` address in ESP8266 Arduino core.
 * This project does not use the `EEPROM` library with data-cache to reduce memory use (directly call flash_read and write). 
 * The `EEPROM` is 4096B in ESP8266, this project uses max [0, 1408B).
-* See the comments in `storge.c` and [esp8266-EEPROM-doc](https://arduino-esp8266.readthedocs.io/en/2.6.3/libraries.html#eeprom).
+* See the comments in `storge.c` and [ESP8266-EEPROM-doc](https://arduino-esp8266.readthedocs.io/en/2.6.3/libraries.html#eeprom).
 * `EEPROM` of [1408, 4096) is safe for you to use. 
 * This project do NOT use `FS(file system)`, so you can use `FS` freely.
 
@@ -133,11 +133,13 @@ Here are the free heap values of running the example sketch:
 
 ## Troubleshooting
 
-* Check your serial output with [example_serial_output.txt](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/example_serial_output.txt)
+* Check your serial output with [example_serial_output.txt](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/example_serial_output.txt)
 
 ## Thanks
-- [esp-homekit](https://github.com/maximkulkin/esp-homekit)
-- [esp-homekit-demo](https://github.com/maximkulkin/esp-homekit-demo)
-- [esp_hw_wdt](https://github.com/ComSuite/esp_hw_wdt)
-- [WolfSSL/WolfCrypt](https://www.wolfssl.com/products/wolfcrypt-2/)
+* [esp-homekit](https://github.com/maximkulkin/esp-homekit)
+* [esp-homekit-demo](https://github.com/maximkulkin/esp-homekit-demo)
+* [esp_hw_wdt](https://github.com/ComSuite/esp_hw_wdt)
+* [WolfSSL/WolfCrypt](https://www.wolfssl.com/products/wolfcrypt-2/)
+* [cJSON](https://github.com/DaveGamble/cJSON)
+* [cQueue](https://github.com/SMFSW/cQueue)
 

@@ -1,6 +1,6 @@
 {
-  "name":"Arduino-HomeKit-ESP8266",
-  "description":"Apple HomeKit accessory server library for ESP8266 Arduino core.",
+  "name":"HomeKit-ESP8266",
+  "description":"Apple HomeKit accessory server library for the ESP8266 Arduino core.",
   "keywords":"homekit,esp8266,esp32,apple homekit",
   "authors":
   {
