@@ -14,9 +14,6 @@
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <homekit/types.h>
-#include <homekit/homekit.h>
-#include <homekit/characteristics.h>
 
 #include <arduino_homekit_server.h>
 #include "ButtonDebounce.h"
