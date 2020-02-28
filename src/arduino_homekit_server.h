@@ -1,12 +1,14 @@
 #ifndef ARDUINO_HOMEKIT_SERVER_H_
 #define ARDUINO_HOMEKIT_SERVER_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 #include <WiFiServer.h>
 #include <WiFiClient.h>
 #include <string.h> //size_t
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "constants.h"
 #include "base64.h"

@@ -59,7 +59,6 @@
 
 client_context_t *current_client_context = NULL;
 homekit_server_t *running_server = nullptr;
-homekit_characteristic_t *accessory_name = nullptr;
 WiFiEventHandler arduino_homekit_gotiphandler;
 
 #define HOMEKIT_NOTIFY_EVENT(server, event) \
@@ -68,7 +67,7 @@ WiFiEventHandler arduino_homekit_gotiphandler;
 
 void client_context_free(client_context_t *c);
 void pairing_context_free(pairing_context_t *context);
-void homekit_server_close_client(homekit_server_t *server, client_context_t *context) ;
+void homekit_server_close_client(homekit_server_t *server, client_context_t *context);
 bool arduino_homekit_preinit(homekit_server_t *server);
 
 homekit_server_t* server_new() {
@@ -178,7 +177,7 @@ client_context_t* client_context_new(WiFiClient *wifiClient) {
 	//c->event_queue = xQueueCreate(20, sizeof(characteristic_event_t*));
 	c->event_queue = (Queue_t*) malloc(sizeof(Queue_t));
 	q_init(c->event_queue, sizeof(characteristic_event_t*),
-			HOMEKIT_EVENT_QUEUE_SIZE, LIFO, true);
+	HOMEKIT_EVENT_QUEUE_SIZE, LIFO, true);
 
 	c->verify_context = NULL;
 
@@ -196,8 +195,6 @@ void client_context_free(client_context_t *c) {
 	if (c->verify_context)
 		pair_verify_context_free(c->verify_context);
 
-//    if (c->event_queue)
-//        vQueueDelete(c->event_queue);
 	if (c->event_queue) {
 		//c->event_queue->clear();
 		q_clean(c->event_queue);
@@ -219,10 +216,6 @@ void client_context_free(client_context_t *c) {
 
 	free(c);
 }
-
-///============================
-//
-//=============================
 
 pairing_context_t *saved_preinit_pairing_context = nullptr;
 
@@ -519,35 +512,17 @@ void write_characteristic_json(json_stream *json, client_context_t *client,
 		}
 	}
 }
-/*
-struct tcp_pcb;
-extern struct tcp_pcb* tcp_tw_pcbs;
-extern "C" void tcp_abort (struct tcp_pcb* pcb);
-
-void tcpCleanup (void) { //do not work???
-  while (tcp_tw_pcbs)
-    tcp_abort(tcp_tw_pcbs);
-}*/
 
 void write(client_context_t *context, byte *data, int data_size) {
 	if (context == nullptr || context->socket == nullptr) {
 		CLIENT_ERROR(context, "The socket is null! (or is closed)");
 		return;
 	}
-	if (context->error_write){
+	if (context->error_write) {
 		CLIENT_ERROR(context, "error_in_write_data is true, abort write data");
 		return;
 	}
 	int write_size = context->socket->write(data, data_size);
-	/*
-	bool flush_ok = context->socket->flush(HOMEKIT_SOCKET_FLUSH_WAIT_MS);
-	//不需要flush，Sync=true的时候都是同步发送数据的
-	if (!flush_ok){
-		context->error_write = true;
-		context->socket->keepAlive(1, 1, 1);
-		CLIENT_ERROR(context, "socket.flush timeout, maybe disconnected. data_size=%d", data_size);
-		return;
-	}*/
 	int availableForWrite = context->socket->availableForWrite();
 	CLIENT_DEBUG(context, "socket.write, data_size=%d, write_size=%d, availableForWrite=%d, WriteError=%d",
 			data_size, write_size, availableForWrite, context->socket->getWriteError());
@@ -559,23 +534,14 @@ void write(client_context_t *context, byte *data, int data_size) {
 		// A workaround to stop the socket and free the internal write_buffer (memory leak)
 		// If just call socket.stop(), the write_buffer will not free
 		context->error_write = true;
-		context->socket->keepAlive(1, 1, 1);// fast disconnected internally in 1 second.
-
+		context->socket->keepAlive(1, 1, 1);		// fast disconnected internally in 1 second.
 		CLIENT_ERROR(context, "socket.write, data_size=%d, write_size=%d", data_size, write_size);
-		//if (write_size == 0) {
-			//如果没有发送成功数据就认为该socket已断开
-			//实测，iPhone断开WiFi之后，ESP8266发送数据write_size=0，
-			//但connected返回值仍为true
-			//context->disconnect = true;
-			//homekit_server_close_client(context->server, context);
-			//return;
-		//}
 	}
 
 }
 
 int client_send_encrypted_(client_context_t *context,
-byte *payload, size_t size) {
+		byte *payload, size_t size) {
 	CLIENT_DEBUG(context, "client_send_encrypted_ size=%d", size);
 	if (!context || !context->encrypted)
 		return -1;
@@ -619,7 +585,7 @@ byte *payload, size_t size) {
 }
 
 int client_decrypt_(client_context_t *context,
-byte *payload, size_t payload_size, byte *decrypted, size_t *decrypted_size) {
+		byte *payload, size_t payload_size, byte *decrypted, size_t *decrypted_size) {
 	if (!context || !context->encrypted)
 		return -1;
 
@@ -676,7 +642,7 @@ void client_notify_characteristic(homekit_characteristic_t *ch, homekit_value_t 
 	client_context_t *client = (client_context_t*) context;
 
 	if (client->current_characteristic == ch && client->current_value
-			&& homekit_value_equal(client->current_value, &value)){
+			&& homekit_value_equal(client->current_value, &value)) {
 		// This value is set by this client, no need to send notification
 		CLIENT_DEBUG(client, "This value is set by this client, no need to send notification");
 		return;
@@ -704,19 +670,11 @@ void client_notify_characteristic(homekit_characteristic_t *ch, homekit_value_t 
 }
 
 void client_send(client_context_t *context, byte *data, size_t data_size) {
-//#if HOMEKIT_DEBUG
-//    if (data_size < 4096) {
-//        char *payload = binary_to_string(data, data_size);
-//        CLIENT_DEBUG(context, "Sending payload: %s", payload);
-//        free(payload);
-//    }
-//#endif
 
 	CLIENT_DEBUG(context, "send data size=%d, encrypted=%s",
 			data_size, context->encrypted ? "true" : "false");
 
 	if (context->encrypted) {
-
 		int r = client_send_encrypted_(context, data, data_size);
 		if (r) {
 			CLIENT_ERROR(context, "Failed to encrypt response (code %d)", r);
@@ -793,10 +751,6 @@ void send_client_events(client_context_t *context, client_event_t *events) {
 
 	client_send_chunk(NULL, 0, context);
 }
-
-//====================
-// tlv
-//====================
 
 void send_tlv_response(client_context_t *context, tlv_values_t *values);
 
@@ -985,10 +939,10 @@ void homekit_server_on_pair_setup(client_context_t *context, const byte *data, s
     homekit_overclock_start();
 #endif
 
-    // First set step=NONE, if pair-setup ok then set step=1or2or3
-    // (if pair-step error, the step is NONE)
+	// First set step=NONE, if pair-setup ok then set step=1or2or3
+	// (if pair-step error, the step is NONE)
 
-    context->step = HOMEKIT_CLIENT_STEP_NONE;
+	context->step = HOMEKIT_CLIENT_STEP_NONE;
 
 	tlv_values_t *message = tlv_new();
 	tlv_parse(data, size, message);
@@ -1014,7 +968,7 @@ void homekit_server_on_pair_setup(client_context_t *context, const byte *data, s
 				send_tlv_error_response(context, 2, TLVError_Unknown);
 				break;
 			}
-			if (saved_preinit_pairing_context == nullptr){
+			if (saved_preinit_pairing_context == nullptr) {
 				CLIENT_ERROR(context, "The saved_preinit_pairing_context is NULL ?!");
 				send_tlv_error_response(context, 2, TLVError_Unknown);
 				break;
@@ -1069,7 +1023,7 @@ void homekit_server_on_pair_setup(client_context_t *context, const byte *data, s
 				device_public_key->value, device_public_key->size,
 				context->server->pairing_context->public_key,
 				context->server->pairing_context->public_key_size);
-		watchdog_check_end("crypto_srp_compute_key");// 13479ms
+		watchdog_check_end("crypto_srp_compute_key"); // 13479ms
 		watchdog_enable_all();
 
 		delay(10);
@@ -2750,7 +2704,7 @@ int homekit_server_on_url(http_parser *parser, const char *data, size_t length) 
 	client_context_t *context = (client_context_t*) parser->data;
 
 	context->endpoint = HOMEKIT_ENDPOINT_UNKNOWN;
-	if (parser->method == HTTP_GET) {
+	if (parser->method == HTTP_PARSER_METHOD_GET) {
 		if (!strncmp(data, "/accessories", length)) {
 			context->endpoint = HOMEKIT_ENDPOINT_GET_ACCESSORIES;
 		} else {
@@ -2767,7 +2721,7 @@ int homekit_server_on_url(http_parser *parser, const char *data, size_t length) 
 				}
 			}
 		}
-	} else if (parser->method == HTTP_POST) {
+	} else if (parser->method == HTTP_PARSER_METHOD_POST) {
 		if (!strncmp(data, "/identify", length)) {
 			context->endpoint = HOMEKIT_ENDPOINT_IDENTIFY;
 		} else if (!strncmp(data, "/pair-setup", length)) {
@@ -2779,7 +2733,7 @@ int homekit_server_on_url(http_parser *parser, const char *data, size_t length) 
 		} else if (!strncmp(data, "/resource", length)) {
 			context->endpoint = HOMEKIT_ENDPOINT_RESOURCE;
 		}
-	} else if (parser->method == HTTP_PUT) {
+	} else if (parser->method == HTTP_PARSER_METHOD_PUT) {
 		if (!strncmp(data, "/characteristics", length)) {
 			context->endpoint = HOMEKIT_ENDPOINT_UPDATE_CHARACTERISTICS;
 		}
@@ -2876,8 +2830,6 @@ int homekit_server_on_message_complete(http_parser *parser) {
 	return 0;
 }
 
-
-
 http_parser_settings make_http_parser_settings() {
 	http_parser_settings settings;
 	settings.on_url = homekit_server_on_url;
@@ -2904,7 +2856,7 @@ void homekit_client_process(client_context_t *context) {
 //        context->data+context->data_available,
 //        context->data_size-context->data_available
 //    );
-	if (context->socket == nullptr){
+	if (context->socket == nullptr) {
 		CLIENT_ERROR(context, "The socket is null");
 		return;
 	}
@@ -2986,7 +2938,7 @@ void homekit_server_close_client(homekit_server_t *server, client_context_t *con
 		// disableKeepAlive or FLUSH_WAIT_MS is small may cause crash
 		//bool stop_ok = context->socket->stop(HOMEKIT_SOCKET_FLUSH_WAIT_MS);
 		//if(!stop_ok){
-			//CLIENT_ERROR(context, "socket.stop error");
+		//CLIENT_ERROR(context, "socket.stop error");
 		//}
 		context->socket->stop();
 		CLIENT_DEBUG(context, "The sockect is stoped");
@@ -3053,7 +3005,7 @@ client_context_t* homekit_server_accept_client(homekit_server_t *server) {
 //    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &rcvtimeout, sizeof(rcvtimeout));
 
 	wifiClient->keepAlive(HOMEKIT_SOCKET_KEEPALIVE_IDLE_SEC,
-			HOMEKIT_SOCKET_KEEPALIVE_INTERVAL_SEC, HOMEKIT_SOCKET_KEEPALIVE_IDLE_COUNT);
+	HOMEKIT_SOCKET_KEEPALIVE_INTERVAL_SEC, HOMEKIT_SOCKET_KEEPALIVE_IDLE_COUNT);
 	//wifiClient->disableKeepAlive();
 	wifiClient->setNoDelay(true);
 	wifiClient->setSync(false);
@@ -3080,7 +3032,7 @@ void homekit_server_process_notifications(homekit_server_t *server) {
 	// 把characteristic_event_t拼接成client_event_t链表
 	// 按照Apple的规定，Nofiy消息需合并发送
 	while (context) {
-		if (context->step != HOMEKIT_CLIENT_STEP_PAIR_VERIFY_2OF2){
+		if (context->step != HOMEKIT_CLIENT_STEP_PAIR_VERIFY_2OF2) {
 			// Do not send event when the client is not verify over.
 			context = context->next;
 			continue;
@@ -3144,8 +3096,8 @@ void homekit_server_process_notifications(homekit_server_t *server) {
 
 }
 
-bool homekit_client_need_process_data(client_context_t *context){
-	if(context){
+bool homekit_client_need_process_data(client_context_t *context) {
+	if (context) {
 		return (context->step >= HOMEKIT_CLIENT_STEP_PAIR_SETUP_1OF3
 				&& context->step < HOMEKIT_CLIENT_STEP_PAIR_VERIFY_2OF2);
 	}
@@ -3165,7 +3117,7 @@ void homekit_server_process(homekit_server_t *server) {
 //				CLIENT_INFO(context, "Step is %d", context->step);
 //			}
 //			delay(10);
-			homekit_client_process(context);
+		homekit_client_process(context);
 //		} while(homekit_client_need_process_data(context));
 
 		context = context->next;
@@ -3174,11 +3126,21 @@ void homekit_server_process(homekit_server_t *server) {
 }
 
 //=====================================================
-// Arduino ESP8266 MDNS: call this funciton only once!
+// Arduino ESP8266 MDNS: call this funciton only once when WiFi STA is connected!
 //=====================================================
+bool homekit_mdns_started = false;
 
 void homekit_mdns_init(homekit_server_t *server) {
 	INFO("Configuring mDNS");
+
+	if (!WiFi.isConnected()) {
+		return;
+	}
+
+	IPAddress staIP = WiFi.localIP();
+	if (!staIP.isSet()) {
+		return;
+	}
 
 	homekit_accessory_t *accessory = server->config->accessories[0];
 	homekit_service_t *accessory_info = homekit_service_by_type(accessory,
@@ -3202,19 +3164,24 @@ void homekit_mdns_init(homekit_server_t *server) {
 		return;
 	}
 
+	if (homekit_mdns_started) {
+		MDNS.close();
+		MDNS.begin(name->value.string_value, staIP);
+		INFO("MDNS.restart: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
+		MDNS.announce();
+		return;
+	}
+
 	//homekit_mdns_configure_init(name->value.string_value, PORT);
 	WiFi.hostname(name->value.string_value);
-	MDNS.begin(name->value.string_value);
-	accessory_name = name;
-	INFO("MDNS.begin->%s", name->value.string_value);
-//    P("name->");
-//    PL(name->value.string_value);
+	// Must specify the MDNS runs on the IP of STA
+	MDNS.begin(name->value.string_value, staIP);
+	INFO("MDNS.begin: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
 
-//    esp8266::MDNSResponder::hMDNSService s =
 	MDNSResponder::hMDNSService mdns_service = MDNS.addService(name->value.string_value,
 	HOMEKIT_MDNS_SERVICE, HOMEKIT_MDNS_PROTO, HOMEKIT_SERVER_PORT);
-	//Set a service specific callback for dynamic service TXT items. The callback is called, whenever
-	//    service TXT items are needed for the given service.
+	// Set a service specific callback for dynamic service TXT items.
+	// The callback is called, whenever service TXT items are needed for the given service.
 	MDNS.setDynamicServiceTxtCallback(mdns_service,
 			[](const MDNSResponder::hMDNSService p_hService) {
 				DEBUG("MDNS call DynamicServiceTxtCallback");
@@ -3282,6 +3249,7 @@ void homekit_mdns_init(homekit_server_t *server) {
 
 	MDNS.announce();
 	MDNS.update();
+	homekit_mdns_started = true;
 	//INFO("MDNS ok! Open your \"Home\" app, click \"Add or Scan Accessory\""
 	//		" and \"I Don't Have a Code\". \nThis Accessory will show on your iOS device.");
 }
@@ -3308,7 +3276,6 @@ int homekit_accessory_key_generate(ed25519_key *key) {
 
 	return 0;
 }
-
 
 void homekit_server_init(homekit_server_config_t *config) {
 	if (!config->accessories) {
@@ -3532,7 +3499,7 @@ bool arduino_homekit_preinit(homekit_server_t *server) {
 	watchdog_disable_all();
 	watchdog_check_begin();
 	crypto_srp_init(preinit_pairing_context->srp, "Pair-Setup", password);
-	watchdog_check_end("crypto_srp_init");// 6585ms
+	watchdog_check_end("crypto_srp_init");  // 6585ms
 	watchdog_enable_all();
 
 	delay(10);
@@ -3551,7 +3518,7 @@ bool arduino_homekit_preinit(homekit_server_t *server) {
 	watchdog_check_begin();
 	int r = crypto_srp_get_public_key(preinit_pairing_context->srp,
 			preinit_pairing_context->public_key, &preinit_pairing_context->public_key_size);
-	watchdog_check_end("crypto_srp_get_public_key");// 3310ms
+	watchdog_check_end("crypto_srp_get_public_key");  // 3310ms
 	watchdog_enable_all();
 
 	delay(10);
@@ -3568,25 +3535,29 @@ bool arduino_homekit_preinit(homekit_server_t *server) {
 	saved_preinit_pairing_context = preinit_pairing_context;
 
 	INFO("arduino_homekit_preinit success");
-	MDNS.announce();// update "paired" state
+	MDNS.announce();		// update "paired" state
 	return true;
 }
 
 
 void arduino_homekit_setup(homekit_server_config_t *config) {
+	if(system_get_cpu_freq() != SYS_CPU_160MHZ){
+		system_update_cpu_freq(SYS_CPU_160MHZ);
+		INFO("Update the CPU to run at 160MHz");
+	}
+
 	homekit_server_init(config);
-	// The MDNS needs to be restarted when WiFi is connected
+	// The MDNS needs to be restarted when WiFi is connected to confirm the
+	// MDNS runs at the IPAddress of STA
 	// otherwise the iOS will not show the Accessory
-	arduino_homekit_gotiphandler = WiFi.onStationModeGotIP([](WiFiEventStationModeGotIP gotip){
+	arduino_homekit_gotiphandler = WiFi.onStationModeGotIP([](WiFiEventStationModeGotIP gotip) {
 		INFO("WiFi connected, ip: %s, mask: %s, gw: %s",
 				gotip.ip.toString().c_str(), gotip.mask.toString().c_str(),
 				gotip.gw.toString().c_str());
-		INFO("MDNS is restarted");
-		if(accessory_name){
-			MDNS.begin(accessory_name->value.string_value);
-			MDNS.announce();
-		}else{
-			ERROR("accessory_name is NULL!");
+		if (running_server) {
+			homekit_mdns_init(running_server);
+		} else {
+			ERROR("running_server is NULL!");
 		}
 	});
 }
@@ -3594,7 +3565,7 @@ void arduino_homekit_setup(homekit_server_config_t *config) {
 void arduino_homekit_loop() {
 	MDNS.update();
 	if (running_server != nullptr) {
-		if(!running_server->paired){
+		if (!running_server->paired) {
 			//If not paired or pairing was removed, preinit paring context.
 			arduino_homekit_preinit(running_server);
 		}

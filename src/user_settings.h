@@ -62,7 +62,9 @@ static inline int hwrand_generate_block(uint8_t *buf, size_t len) {
 
 //see integer.c
 //default winsize=5(MP_LOW_MEM), but ram(heap) is not sufficient!
-#define ESP_INTEGER_WINSIZE 3
+//winsize of {2,3,4,5} are same performance
+//lower winsize, lower ram required
+#define ESP_INTEGER_WINSIZE 2
 
 //force use s_mp_exptmod (lower memory), and smiller performance with mp_exptmod_fast
 #define ESP_FORCE_S_MP_EXPTMOD

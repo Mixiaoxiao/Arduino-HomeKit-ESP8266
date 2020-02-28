@@ -207,8 +207,9 @@ enum http_method
   {
 // For compat with ESP8266WebServer
 //(HTTP_POST / HTTP_GET is defined in ESP8266WebServer
-#define XX(num, name, string) HTTP_##name = num,
-//#define XX(num, name, string) HTTP_PARSER_METHOD_##name = num,
+//#define XX(num, name, string) HTTP_##name = num,
+	//replace "HTTP_*" to "HTTP_PARSER_METHOD_*"
+#define XX(num, name, string) HTTP_PARSER_METHOD_##name = num,
   HTTP_METHOD_MAP(XX)
 #undef XX
   };

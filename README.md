@@ -135,6 +135,14 @@ Here are the free heap values of running the example sketch:
 
 * Check your serial output with [example_serial_output.txt](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/example_serial_output.txt)
 
+
+## Change Log
+
+#### v1.0.1 
+* Reduce `winsize` from `3` to `2`(same performance) to lower the heap required. Pairing can be done with low free-heap of ~14000.
+* Specify the MDNS runs on the IPAddress of STA to ensure the HomeKit can work with some SoftAP-based WiFi-Config libraries.
+* Rename the `HTTP_METHOD`(s) in `http_parser.h` to avoid multi-definition errors when using `ESP8266WebServer` together.
+
 ## Thanks
 * [esp-homekit](https://github.com/maximkulkin/esp-homekit)
 * [esp-homekit-demo](https://github.com/maximkulkin/esp-homekit-demo)
