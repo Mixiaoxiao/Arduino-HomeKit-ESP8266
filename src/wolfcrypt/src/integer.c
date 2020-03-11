@@ -1895,8 +1895,7 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y,
   } else {
     winsize = 8;
   }
-  printf("=== integer.c mp_exptmod_fast, winsize=%d, redmode=%d\n",
-  		  winsize, redmode);
+  INFO("Call mp_exptmod_fast in integer.c, original winsize %d", winsize);
 
 #ifdef MP_LOW_MEM
 //  if (winsize > 5) {
@@ -3135,7 +3134,6 @@ int fast_s_mp_sqr (mp_int * a, mp_int * b)
  */
 int fast_s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 {
-	//printf("====== fast_s_mp_mul_digs =======\n");
   int     olduse, res, pa, ix, iz;
 #ifdef WOLFSSL_SMALL_STACK
   mp_digit* W;    /* uses dynamic memory and slower */
@@ -3292,7 +3290,6 @@ int s_mp_sqr (mp_int * a, mp_int * b)
  */
 int s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 {
-	//printf("====== s_mp_mul_digs =======\n");
   mp_int  t;
   int     res, pa, pb, ix, iy;
   mp_digit u;
@@ -3427,8 +3424,7 @@ int s_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode)
   } else {
     winsize = 8;
   }
-  printf("=== integer.c s_mp_exptmod, winsize=%d, redmode=%d\n",
-		  winsize, redmode);
+  INFO("Call s_mp_exptmod in integer.c, original winsize %d", winsize);
 
 #ifdef MP_LOW_MEM
 //    if (winsize > 5) {

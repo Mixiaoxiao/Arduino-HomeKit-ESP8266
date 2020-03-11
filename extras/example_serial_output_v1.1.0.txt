@@ -1,0 +1,101 @@
+SketchSize: 472448
+FreeSketchSpace: 487424
+FlashChipSize: 4194304
+FlashChipRealSize: 4194304
+FlashChipSpeed: 40000000
+SdkVersion: 2.2.2-dev(a58da79)
+FullVersion: SDK:2.2.2-dev(a58da79)/Core:2.6.3=20603000/lwIP:STABLE-2_1_2_RELEASE/glue:1.2-16-ge23a07e/BearSSL:89454af
+CpuFreq: 160MHz
+FreeHeap: 46160
+ResetInfo: Fatal exception:0 flag:6 (EXT_SYS_RST) epc1:0x00000000 epc2:0x00000000 epc3:0x00000000 excvaddr:0x00000000 depc:0x00000000
+ResetReason: External System
+>>> [    103] HomeKit: Free heap: 46160
+OFF
+>>> [    108] HomeKit: Starting server
+>>> [    111] HomeKit: Using existing accessory ID: 2E:B4:49:BB:A1:61
+>>> [    117] HomeKit: Preiniting pairing context
+>>> [    122] HomeKit: Using user-specified password: 111-11-111
+>>> [    143] HomeKit: Call s_mp_exptmod in integer.c, original winsize 6
+>>> [   6199] HomeKit: Call s_mp_exptmod in integer.c, original winsize 5
+>>> [   9316] HomeKit: Preinit pairing context success
+>>> [   9321] HomeKit: Configuring MDNS
+>>> [   9324] HomeKit: Init server over
+>>> [   9328] HomeKit: Free heap: 43200
+heap: 43200, sockets: 0
+>>> [  12915] HomeKit: WiFi connected, ip: 192.168.1.100, mask: 255.255.255.0, gw: 192.168.1.253
+>>> [  12924] HomeKit: Configuring MDNS
+>>> [  12929] HomeKit: MDNS.begin: ESP8266_LED_4CBB41, IP: 192.168.1.100
+heap: 41504, sockets: 0
+heap: 41504, sockets: 0
+heap: 41000, sockets: 0
+heap: 40872, sockets: 0
+heap: 40872, sockets: 0
+>>> [  36605] HomeKit: Got new client: local 192.168.1.100:5556, remote 192.168.1.101:58545
+>>> [  36615] HomeKit: [Client 1073683396] Pair Setup Step 1/3
+>>> [  39251] HomeKit: [Client 1073683396] Pair Setup Step 2/3
+>>> [  39262] HomeKit: Call s_mp_exptmod in integer.c, original winsize 6
+>>> [  48101] HomeKit: Call s_mp_exptmod in integer.c, original winsize 5
+heap: 38952, sockets: 1
+>>> [  52664] HomeKit: [Client 1073683396] Pair Setup Step 3/3
+>>> [  52694] HomeKit: Call ge_double_scalarmult_vartime_lowmem in ge_low_mem.c
+>>> [  53446] HomeKit: Added pairing with CF87DA6B-7078-44BB-AC04-27B6F2B26D37
+>>> [  53520] HomeKit: Free saved_preinit_pairing_context
+>>> [  53525] HomeKit: [Client 1073683396] Successfully paired
+>>> [  53632] HomeKit: [Client 1073683396] Disconnected!
+>>> [  53637] HomeKit: [Client 1073683396] Closing client connection
+>>> [  53892] HomeKit: Got new client: local 192.168.1.100:5556, remote 192.168.1.101:58546
+>>> [  53902] HomeKit: [Client 1073683452] Pair Verify Step 1/2
+>>> [  54224] HomeKit: Free heap: 41072
+>>> [  54303] HomeKit: [Client 1073683452] Pair Verify Step 2/2
+>>> [  54310] HomeKit: [Client 1073683452] Found pairing with CF87DA6B-7078-44BB-AC04-27B6F2B26D37
+>>> [  54333] HomeKit: Call ge_double_scalarmult_vartime_lowmem in ge_low_mem.c
+>>> [  55096] HomeKit: [Client 1073683452] Verification successful, secure session established
+>>> [  55104] HomeKit: Free heap: 41184
+>>> [  55172] HomeKit: [Client 1073683452] Get Accessories
+>>> [  55288] HomeKit: [Client 1073683452] Update Characteristics
+>>> [  55319] HomeKit: [Client 1073683452] Update Characteristics
+>>> [  55340] HomeKit: [Client 1073683452] Update Characteristics
+>>> [  55367] HomeKit: [Client 1073683452] Get Characteristics
+heap: 41720, sockets: 1
+>>> [  57579] HomeKit: [Client 1073683452] Get Characteristics
+>>> [  58091] HomeKit: [Client 1073683452] Update Characteristics
+accessory identify
+ON  100 (pwm:    0 of 1023)
+OFF
+ON  100 (pwm:    0 of 1023)
+OFF
+ON  100 (pwm:    0 of 1023)
+OFF
+>>> [  59627] HomeKit: [Client 1073683452] Update Characteristics
+accessory identify
+ON  100 (pwm:    0 of 1023)
+OFF
+ON  100 (pwm:    0 of 1023)
+OFF
+ON  100 (pwm:    0 of 1023)
+OFF
+heap: 41720, sockets: 1
+>>> [  64645] HomeKit: [Client 1073683452] Get Characteristics
+heap: 41720, sockets: 1
+>>> [  69868] HomeKit: [Client 1073683452] Update Characteristics
+ON  100 (pwm:    0 of 1023)
+>>> [  70688] HomeKit: [Client 1073683452] Update Characteristics
+OFF
+>>> [  71301] HomeKit: [Client 1073683452] Update Characteristics
+ON  100 (pwm:    0 of 1023)
+>>> [  71813] HomeKit: [Client 1073683452] Update Characteristics
+OFF
+>>> [  72082] HomeKit: [Client 1073683452] Update Characteristics
+ON  100 (pwm:    0 of 1023)
+heap: 41720, sockets: 1
+>>> [  72530] HomeKit: [Client 1073683452] Update Characteristics
+OFF
+>>> [  74086] HomeKit: [Client 1073683452] Update Characteristics
+ON  100 (pwm:    0 of 1023)
+>>> [  74550] HomeKit: [Client 1073683452] Update Characteristics
+OFF
+heap: 41720, sockets: 1
+heap: 41720, sockets: 1
+heap: 41720, sockets: 1
+heap: 41720, sockets: 1
+heap: 41720, sockets: 1

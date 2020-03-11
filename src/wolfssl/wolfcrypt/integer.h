@@ -173,7 +173,7 @@ extern "C" {
 typedef int           mp_err;
 
 /* define this to use lower memory usage routines (exptmods mostly) */
-#define MP_LOW_MEM
+//#define MP_LOW_MEM
 
 /* default precision */
 #ifndef MP_PREC

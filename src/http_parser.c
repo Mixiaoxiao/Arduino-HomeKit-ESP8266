@@ -461,6 +461,7 @@ do {                                                                 \
 
 
 /* Map errno values to strings for human-readable output */
+/*
 #define HTTP_STRERROR_GEN(n, s) { "HPE_" #n, s },
 static struct {
   const char *name;
@@ -468,7 +469,7 @@ static struct {
 } http_strerror_tab[] = {
   HTTP_ERRNO_MAP(HTTP_STRERROR_GEN)
 };
-#undef HTTP_STRERROR_GEN
+#undef HTTP_STRERROR_GEN*/
 
 int http_message_needs_eof(const http_parser *parser);
 
@@ -2158,6 +2159,7 @@ http_parser_settings_init(http_parser_settings *settings)
   memset(settings, 0, sizeof(*settings));
 }
 
+/*
 const char *
 http_errno_name(enum http_errno err) {
   assert(((size_t) err) < ARRAY_SIZE(http_strerror_tab));
@@ -2169,6 +2171,7 @@ http_errno_description(enum http_errno err) {
   assert(((size_t) err) < ARRAY_SIZE(http_strerror_tab));
   return http_strerror_tab[err].description;
 }
+*/
 
 static enum http_host_state
 http_parse_host_char(enum http_host_state s, const char ch) {

@@ -76,7 +76,7 @@ extern uint32_t _SPIFFS_start; //See spiffs_api.h
 
 #define ACCESSORY_KEY_SIZE  64
 
-#define STORAGE_DEBUG(message, ...) printf("*** [Storage] %s: " message "\n", __func__, ##__VA_ARGS__)
+#define STORAGE_DEBUG(message, ...) //printf("*** [Storage] %s: " message "\n", __func__, ##__VA_ARGS__)
 
 const char magic1[] = "HAP";
 

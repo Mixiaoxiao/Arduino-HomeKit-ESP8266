@@ -6395,20 +6395,14 @@ static void ge_select(ge_precomp *t,int pos,signed char b)
 
   ge_precomp_0(t);
 
-  //memcpy_P(base_pos, base + pos, sizeof(ge_precomp) * 8);//不对
-//  memcpy_P(base_pos, base0, sizeof(ge_precomp) * 8);
-  ge_precomp *base_pos = malloc(sizeof(ge_precomp));
-  int i;
-    for(i=0; i<8; i++){
-  	  memcpy_P(base_pos, pgm_read_ptr(&(basePP[pos * 8 + i])) ,
-  			  sizeof(ge_precomp));
-  	  cmov(t,base_pos,babs,(i+1));
-    }
-    free(base_pos);
+    ge_precomp base_ram[1];
+    int i;
+  	for (i = 0; i < 8; i++) {
+  		memcpy_P(base_ram, pgm_read_ptr(&(basePP[pos * 8 + i])),
+  				sizeof(ge_precomp));
+  		cmov(t, base_ram, babs, (i + 1));
+  	}
   /*
-   ge_precomp base_pos[8];
-  memcpy_P(base_pos, pgm_read_ptr(&(baseP[pos])), sizeof(ge_precomp) * 8);
-
    	cmov(t,&base_pos[0],babs,1);
   	cmov(t,&base_pos[1],babs,2);
   	cmov(t,&base_pos[2],babs,3);

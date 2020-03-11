@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <esp_xpgm.h>
 #include <ESP8266WiFi.h>
 #include <WiFiServer.h>
 #include <WiFiClient.h>
@@ -28,13 +29,12 @@
 #include "watchdog.h"
 #include "arduino_homekit_server.h"
 
-#define HOMEKIT_SERVER_PORT  5556
-#define HOMEKIT_MAX_CLIENTS  4
-#define HOMEKIT_MDNS_SERVICE "hap"//"_hap"
-#define HOMEKIT_MDNS_PROTO   "tcp"//"_tcp"
+#define HOMEKIT_SERVER_PORT      5556
+#define HOMEKIT_MAX_CLIENTS      8
+#define HOMEKIT_MDNS_SERVICE     "hap"//"_hap"
+#define HOMEKIT_MDNS_PROTO       "tcp"//"_tcp"
 #define HOMEKIT_EVENT_QUEUE_SIZE 4 //original is 20
-//See WiFiClient.h WIFICLIENT_MAX_FLUSH_WAIT_MS
-#define HOMEKIT_SOCKET_FLUSH_WAIT_MS 200 //milliseconds
+#define HOMEKIT_SOCKET_TIMEOUT   500 //milliseconds
 
 //#define TCP_DEFAULT_KEEPALIVE_IDLE_SEC          7200 // 2 hours
 //#define TCP_DEFAULT_KEEPALIVE_INTERVAL_SEC      75   // 75 sec
@@ -46,6 +46,11 @@
 //const int maxpkt = 4; /* Drop connection after 4 probes without response */
 #define HOMEKIT_SOCKET_KEEPALIVE_IDLE_COUNT     4
 // if 180 + 30 * 4 = 300 sec without socket response, disconected it.
+
+// WiFiClient can not write big buff once.
+// TCP_SND_BUF = (2 * TCP_MSS) = 1072. See lwipopts.h
+// max(encrypted_chunk) = 512 + 8(chunk_info) + 18(chacha_info). See client_send_encrypted
+#define HOMEKIT_JSONBUFFER_SIZE  512
 
 #ifdef HOMEKIT_DEBUG
 #define TLV_DEBUG(values) //tlv_debug(values)
@@ -514,37 +519,49 @@ void write_characteristic_json(json_stream *json, client_context_t *client,
 }
 
 void write(client_context_t *context, byte *data, int data_size) {
-	if (context == nullptr || context->socket == nullptr) {
+	if ((!context) || (!context->socket) || (!context->socket->connected())) {
 		CLIENT_ERROR(context, "The socket is null! (or is closed)");
 		return;
 	}
 	if (context->error_write) {
-		CLIENT_ERROR(context, "error_in_write_data is true, abort write data");
+		CLIENT_ERROR(context, "Abort write data since error_write.");
 		return;
 	}
 	int write_size = context->socket->write(data, data_size);
-	int availableForWrite = context->socket->availableForWrite();
-	CLIENT_DEBUG(context, "socket.write, data_size=%d, write_size=%d, availableForWrite=%d, WriteError=%d",
-			data_size, write_size, availableForWrite, context->socket->getWriteError());
-	//sync=true时，如果write在没有发送成功，会造成内存泄漏
+	CLIENT_DEBUG(context, "Sending data of size %d", data_size);
 	if (write_size != data_size) {
-		//猜测Socket对方已断开，本sockek缓冲区满了，如果这时候断开连接会造成内存泄漏
-		//所以最终的方案是由自身的keepalive来定disconnect
-		//context->socket->stop(); // Causes memory leak if some data has not been sent (eg. the peer client is disconnected)
-		// A workaround to stop the socket and free the internal write_buffer (memory leak)
-		// If just call socket.stop(), the write_buffer will not free
-		context->error_write = true;
-		context->socket->keepAlive(1, 1, 1);		// fast disconnected internally in 1 second.
 		CLIENT_ERROR(context, "socket.write, data_size=%d, write_size=%d", data_size, write_size);
+		context->error_write = true;
+		// Error write when :
+		// 1. remote client is disconnected
+		// 2. data_size is larger than the tcp internal send buffer
+		// But We has limited the data_size to 538, and TCP_SND_BUF = 1072. (See the comments on HOMEKIT_JSONBUFFER_SIZE)
+		// So we believe here is disconnected.
+		context->disconnect = true;
+		homekit_server_close_client(context->server, context);
+		// We consider the socket is 'closed' when error in writing (eg. the remote client is disconnected, NO tcp ack receive).
+		// Closing the socket causes memory-leak if some data has not been sent (the write_buffer did not free)
+		// To fix this memory-leak, add tcp_abandon(_pcb, 0); in ClientContext.h of ESP8266WiFi-library.
 	}
 
 }
 
 int client_send_encrypted_(client_context_t *context,
 		byte *payload, size_t size) {
-	CLIENT_DEBUG(context, "client_send_encrypted_ size=%d", size);
+	CLIENT_DEBUG(context, "Send encrypted of size %d", size);
+	// max(size) = HOMEKIT_JSONBUFFER_SIZE + chunk_info(8) = 512 + 8 = 520
 	if (!context || !context->encrypted)
 		return -1;
+
+	/*
+	 HAP doc:
+	 Each HTTP message is split into frames no larger than 1024 bytes.
+	 Each frame has the following format:
+	 <2:AAD for little endian length of encrypted data (n) in bytes>
+	 <n:encrypted data according to AEAD algorithm, up to 1024 bytes>
+	 <16:authTag according to AEAD algorithm>
+	 Note by Wang Bin. 2020-03-07
+	 */
 
 	byte nonce[12];
 	memset(nonce, 0, sizeof(nonce));
@@ -636,7 +653,6 @@ int client_decrypt_(client_context_t *context,
 	return payload_offset;
 }
 
-//将设备的notify事件（如各种状态改变存起来）
 void client_notify_characteristic(homekit_characteristic_t *ch, homekit_value_t value,
 		void *context) {
 	client_context_t *client = (client_context_t*) context;
@@ -664,7 +680,6 @@ void client_notify_characteristic(homekit_characteristic_t *ch, homekit_value_t 
 	DEBUG("Sending event to client %d", client->socket);
 
 	//xQueueSendToBack(client->event_queue, &event, 10);*/
-	//client->event_queue->add(event);
 	//q_push第二个参数要传指针地址
 	q_push(client->event_queue, &event);
 }
@@ -685,6 +700,11 @@ void client_send(client_context_t *context, byte *data, size_t data_size) {
 	}
 }
 
+void client_send_P(client_context_t *context, PGM_P pgm) {
+	XPGM_BUFFCPY_STRING(char, buff, pgm);
+	client_send(context, (byte*)buff, sizeof(buff) - 1);
+}
+
 void client_send_chunk(byte *data, size_t size, void *arg) {
 	client_context_t *context = (client_context_t*) arg;
 
@@ -696,39 +716,35 @@ void client_send_chunk(byte *data, size_t size, void *arg) {
 	}
 
 	int offset = snprintf((char*) payload, payload_size, "%x\r\n", size);
-	//if(size > 0){
 	memcpy(payload + offset, data, size);
-	//}
 	payload[offset + size] = '\r';
 	payload[offset + size + 1] = '\n';
-	//printf("size HEX is %x\n", size);
 	CLIENT_DEBUG(context, "client_send_chunk, size=%d, offset=%d", size, offset);
 	client_send(context, payload, offset + size + 2);
 	free(payload);
 }
 
 void send_204_response(client_context_t *context) {
-	static char response[] = "HTTP/1.1 204 No Content\r\n\r\n";
-	client_send(context, (byte*) response, sizeof(response) - 1);
+	static const char PROGMEM response[] = "HTTP/1.1 204 No Content\r\n\r\n";
+	client_send_P(context, response);
 }
 
 void send_404_response(client_context_t *context) {
-	static char response[] = "HTTP/1.1 404 Not Found\r\n\r\n";
-	client_send(context, (byte*) response, sizeof(response) - 1);
+	static const char PROGMEM response[] = "HTTP/1.1 404 Not Found\r\n\r\n";
+	client_send_P(context, response);
 }
 
 void send_client_events(client_context_t *context, client_event_t *events) {
 	CLIENT_DEBUG(context, "Sending EVENT");DEBUG_HEAP();
 
-	static byte http_headers[] = "EVENT/1.0 200 OK\r\n"
+	static const char PROGMEM http_headers[] = "EVENT/1.0 200 OK\r\n"
 			"Content-Type: application/hap+json\r\n"
 			"Transfer-Encoding: chunked\r\n\r\n";
-
-	client_send(context, http_headers, sizeof(http_headers) - 1);
+	client_send_P(context, http_headers);
 
 	// ~35 bytes per event JSON
 	// 256 should be enough for ~7 characteristic updates
-	json_stream *json = json_new(256, client_send_chunk, context);
+	json_stream *json = json_new(HOMEKIT_JSONBUFFER_SIZE, client_send_chunk, context);
 	json_object_start(json);
 	json_string(json, "characteristics");
 	json_array_start(json);
@@ -778,10 +794,12 @@ void send_tlv_response(client_context_t *context, tlv_values_t *values) {
 
 	tlv_free(values);
 
-	static char *http_headers = "HTTP/1.1 200 OK\r\n"
-			"Content-Type: application/pairing+tlv8\r\n"
-			"Content-Length: %d\r\n"
-			"Connection: keep-alive\r\n\r\n";
+	static const char PROGMEM http_headers_pgm[] = "HTTP/1.1 200 OK\r\n"
+				"Content-Type: application/pairing+tlv8\r\n"
+				"Content-Length: %d\r\n"
+				"Connection: keep-alive\r\n\r\n";
+
+	XPGM_BUFFCPY_STRING(char, http_headers, http_headers_pgm);
 
 	int response_size = strlen(http_headers) + payload_size + 32;
 	char *response = (char*) malloc(response_size);
@@ -804,12 +822,12 @@ void send_tlv_response(client_context_t *context, tlv_values_t *values) {
 	free(response);
 }
 
-byte json_200_response_headers[] = "HTTP/1.1 200 OK\r\n"
+static const char PROGMEM json_200_response_headers_progmem[] = "HTTP/1.1 200 OK\r\n"
 		"Content-Type: application/hap+json\r\n"
 		"Transfer-Encoding: chunked\r\n"
 		"Connection: keep-alive\r\n\r\n";
 
-byte json_207_response_headers[] = "HTTP/1.1 207 Multi-Status\r\n"
+static const char PROGMEM json_207_response_headers_progmem[] = "HTTP/1.1 207 Multi-Status\r\n"
 		"Content-Type: application/hap+json\r\n"
 		"Transfer-Encoding: chunked\r\n"
 		"Connection: keep-alive\r\n\r\n";
@@ -818,35 +836,40 @@ void send_json_response(client_context_t *context, int status_code, byte *payloa
 		size_t payload_size) {
 	CLIENT_DEBUG(context, "Sending JSON response");DEBUG_HEAP();
 
-	static char *http_headers = "HTTP/1.1 %d %s\r\n"
+	static const char PROGMEM http_headers_pgm[] = "HTTP/1.1 %d %s\r\n"
 			"Content-Type: application/hap+json\r\n"
 			"Content-Length: %d\r\n"
 			"Connection: keep-alive\r\n\r\n";
 
+	XPGM_BUFFCPY_STRING(char, http_headers, http_headers_pgm);
+
 	CLIENT_DEBUG(context, "Payload: %s", payload);
 
-	const char *status_text = "OK";
+	// Using PSTR and strcpy_P. Ref: ESP.getResetReason
+	//const char *status_text = "OK";
+	char status_text[32];
+	strcpy_P(status_text, PSTR("OK"));
 	switch (status_code) {
 	case 204:
-		status_text = "No Content";
+		strcpy_P(status_text, PSTR("No Content"));
 		break;
 	case 207:
-		status_text = "Multi-Status";
+		strcpy_P(status_text, PSTR("Multi-Status"));
 		break;
 	case 400:
-		status_text = "Bad Request";
+		strcpy_P(status_text, PSTR("Bad Request"));
 		break;
 	case 404:
-		status_text = "Not Found";
+		strcpy_P(status_text, PSTR("Not Found"));
 		break;
 	case 422:
-		status_text = "Unprocessable Entity";
+		strcpy_P(status_text, PSTR("Unprocessable Entity"));
 		break;
 	case 500:
-		status_text = "Internal Server Error";
+		strcpy_P(status_text, PSTR("Internal Server Error"));
 		break;
 	case 503:
-		status_text = "Service Unavailable";
+		strcpy_P(status_text, PSTR("Service Unavailable"));
 		break;
 	}
 
@@ -1764,11 +1787,11 @@ void homekit_client_process(client_context_t *context);
 void homekit_server_on_get_accessories(client_context_t *context) {
 	DEBUG_TIME_BEGIN();
 	CLIENT_INFO(context, "Get Accessories");DEBUG_HEAP();
-	client_send(context, json_200_response_headers, sizeof(json_200_response_headers) - 1);
+	client_send_P(context, json_200_response_headers_progmem);
 
 	CLIENT_DEBUG(context, "Get Accessories, start send json body");
 
-	json_stream *json = json_new(1024, client_send_chunk, context);
+	json_stream *json = json_new(HOMEKIT_JSONBUFFER_SIZE, client_send_chunk, context);
 	json_object_start(json);
 	json_string(json, "accessories");
 	json_array_start(json);
@@ -1920,12 +1943,12 @@ void homekit_server_on_get_characteristics(client_context_t *context) {
 	id = strdup(id_param->value);
 
 	if (success) {
-		client_send(context, json_200_response_headers, sizeof(json_200_response_headers) - 1);
+		client_send_P(context, json_200_response_headers_progmem);
 	} else {
-		client_send(context, json_207_response_headers, sizeof(json_207_response_headers) - 1);
+		client_send_P(context, json_207_response_headers_progmem);
 	}
 
-	json_stream *json = json_new(256, client_send_chunk, context);
+	json_stream *json = json_new(HOMEKIT_JSONBUFFER_SIZE, client_send_chunk, context);
 	json_object_start(json);
 	json_string(json, "characteristics");
 	json_array_start(json);
@@ -2151,7 +2174,8 @@ HAPStatus process_characteristics_update(const cJSON *j_ch, client_context_t *co
 
 			default:
 				CLIENT_ERROR(context, "Unexpected format when updating numeric value: %d",
-						ch->format);
+						ch->format)
+				;
 				return HAPStatus_InvalidValue;
 			}
 
@@ -2387,10 +2411,9 @@ void homekit_server_on_update_characteristics(client_context_t *context, const b
 		send_204_response(context);
 	} else {
 		CLIENT_DEBUG(context, "There were processing errors, sending Multi-Status response");
-		client_send(context, json_207_response_headers, sizeof(json_207_response_headers) - 1);
+		client_send_P(context, json_207_response_headers_progmem);
 
-		json_stream *json1 = json_new(1024, client_send_chunk, context);
-		//json_stream *json1 = json_new(512, client_send_chunk, context);
+		json_stream *json1 = json_new(HOMEKIT_JSONBUFFER_SIZE, client_send_chunk, context);
 		json_object_start(json1);
 		json_string(json1, "characteristics");
 		json_array_start(json1);
@@ -2697,10 +2720,6 @@ void homekit_server_on_resource(client_context_t *context) {
 //=============================================
 
 int homekit_server_on_url(http_parser *parser, const char *data, size_t length) {
-	//DEBUG("http_parser data_length = %d", length);
-//    String url = String(data);
-	//DEBUG("url -> %s", data);
-
 	client_context_t *context = (client_context_t*) parser->data;
 
 	context->endpoint = HOMEKIT_ENDPOINT_UNKNOWN;
@@ -2928,23 +2947,13 @@ void homekit_client_process(client_context_t *context) {
 void homekit_server_close_client(homekit_server_t *server, client_context_t *context) {
 	CLIENT_INFO(context, "Closing client connection");
 	context->step = HOMEKIT_CLIENT_STEP_END;
-	//FD_CLR(context->socket, &server->fds);
-	// TODO: recalc server->max_fd ?
 	server->nfds--;
-	//close(context->socket);
 
 	if (context->socket) {
-		//context->socket->disableKeepAlive();
-		// disableKeepAlive or FLUSH_WAIT_MS is small may cause crash
-		//bool stop_ok = context->socket->stop(HOMEKIT_SOCKET_FLUSH_WAIT_MS);
-		//if(!stop_ok){
-		//CLIENT_ERROR(context, "socket.stop error");
-		//}
 		context->socket->stop();
-		CLIENT_DEBUG(context, "The sockect is stoped");
+		CLIENT_DEBUG(context, "The sockect is stopped");
 		delete context->socket;
 		context->socket = nullptr;
-
 	}
 	if (context->server->pairing_context && context->server->pairing_context->client == context) {
 		pairing_context_free(context->server->pairing_context);
@@ -2971,9 +2980,6 @@ void homekit_server_close_client(homekit_server_t *server, client_context_t *con
 }
 
 client_context_t* homekit_server_accept_client(homekit_server_t *server) {
-//    int s = accept(server->listen_fd, (struct sockaddr *)NULL, (socklen_t *)NULL);
-//    if (s < 0)
-//        return NULL;
 
 	if (!server->wifi_server) {
 		ERROR("The server's WiFiServer is NULL!");
@@ -2982,11 +2988,8 @@ client_context_t* homekit_server_accept_client(homekit_server_t *server) {
 	WiFiClient *wifiClient = nullptr;
 
 	if (server->wifi_server->hasClient()) {
-		INFO("WiFiServer receives a new client (current %d, max %d)", server->nfds,
-				HOMEKIT_MAX_CLIENTS);
 		wifiClient = new WiFiClient(server->wifi_server->available());
-		//wifiClient->flush();
-		if (server->nfds >= HOMEKIT_MAX_CLIENTS) {    //HOMEKIT_MAX_CLIENTS) {
+		if (server->nfds >= HOMEKIT_MAX_CLIENTS) {
 			INFO("No more room for client connections (max %d)", HOMEKIT_MAX_CLIENTS);
 			wifiClient->stop();
 			delete wifiClient;
@@ -2995,27 +2998,21 @@ client_context_t* homekit_server_accept_client(homekit_server_t *server) {
 	} else {
 		return NULL;
 	}
-//   INFO("Got new client connection: %d from %s", s, address_buffer);
 
-	INFO("Got new client connection: local %s:%d, remote %s:%d",
+	INFO("Got new client: local %s:%d, remote %s:%d",
 			wifiClient->localIP().toString().c_str(), wifiClient->localPort(),
 			wifiClient->remoteIP().toString().c_str(), wifiClient->remotePort());
 
-//    const struct timeval rcvtimeout = { 10, 0 }; /* 10 second timeout */
-//    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &rcvtimeout, sizeof(rcvtimeout));
-
 	wifiClient->keepAlive(HOMEKIT_SOCKET_KEEPALIVE_IDLE_SEC,
 	HOMEKIT_SOCKET_KEEPALIVE_INTERVAL_SEC, HOMEKIT_SOCKET_KEEPALIVE_IDLE_COUNT);
-	//wifiClient->disableKeepAlive();
 	wifiClient->setNoDelay(true);
 	wifiClient->setSync(false);
-	//wifiClient在write数据的时候会用到timeout
-	wifiClient->setTimeout(HOMEKIT_SOCKET_FLUSH_WAIT_MS);    //milliseconds (ms)
+	wifiClient->setTimeout(HOMEKIT_SOCKET_TIMEOUT);
 
 	client_context_t *context = client_context_new(wifiClient);
 	context->server = server;
 	context->socket = wifiClient;
-	//链表中把新增的context放到头部
+
 	context->next = server->clients;
 	server->clients = context;
 
@@ -3131,7 +3128,7 @@ void homekit_server_process(homekit_server_t *server) {
 bool homekit_mdns_started = false;
 
 void homekit_mdns_init(homekit_server_t *server) {
-	INFO("Configuring mDNS");
+	INFO("Configuring MDNS");
 
 	if (!WiFi.isConnected()) {
 		return;
@@ -3474,7 +3471,7 @@ bool arduino_homekit_preinit(homekit_server_t *server) {
 	if (saved_preinit_pairing_context != nullptr) {
 		return true;
 	}
-	INFO("Preinit pairing context");
+	INFO("Preiniting pairing context");
 	pairing_context_t *preinit_pairing_context = pairing_context_new();
 	DEBUG_HEAP();
 	char password[11];
@@ -3534,14 +3531,13 @@ bool arduino_homekit_preinit(homekit_server_t *server) {
 	}
 	saved_preinit_pairing_context = preinit_pairing_context;
 
-	INFO("arduino_homekit_preinit success");
+	INFO("Preinit pairing context success");
 	MDNS.announce();		// update "paired" state
 	return true;
 }
 
-
 void arduino_homekit_setup(homekit_server_config_t *config) {
-	if(system_get_cpu_freq() != SYS_CPU_160MHZ){
+	if (system_get_cpu_freq() != SYS_CPU_160MHZ) {
 		system_update_cpu_freq(SYS_CPU_160MHZ);
 		INFO("Update the CPU to run at 160MHz");
 	}

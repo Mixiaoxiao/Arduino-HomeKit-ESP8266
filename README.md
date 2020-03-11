@@ -12,6 +12,8 @@ Enjoy the "one-key" build, "one-key" upload, and work to link various other Ardu
 
 Here is a [discussion](https://github.com/HomeACcessoryKid/Arduino-HomeKit/issues/1) about the RTOS is required for running Apple HomeKit, and this project is a proof of concept that Apple HomeKit can be implemented and work fine without the RTOS.
 
+This library is built with ESP8266 Arduino Core 2.6.3. Lower versions may compile with errors.
+
 ## Preview
 
 ![Preview](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/preview.jpg) 
@@ -74,11 +76,19 @@ I tried to make WolfSSL crypto work safely on ESP8266 with better performance an
 
 Here are the free heap values of running the example sketch:
 
-* Boot: ~26000
-* Preinit over: ~22000
-* Pairing: ~17000 (or even low when crypto computing)
-* Paired and connected with one iOS device: ~21700
-* Paired and no iOS device connected: ~23400
+* ~~Boot: ~26000~~
+* ~~Preinit over: ~22000~~
+* ~~Pairing: ~17000 (or even low when crypto computing)~~
+* ~~Paired and connected with one iOS device: ~21700~~
+* ~~Paired and no iOS device connected: ~23400~~
+
+After memory optimization in v1.1.0:
+
+* Boot: ~46000
+* Preinit over: ~41000
+* Pairing: ~37000 (or even low when crypto computing)
+* Paired and connected with one iOS device: ~41700
+* Paired and no iOS device connected: ~43000
 
 
 ## WolfSSL
@@ -137,6 +147,10 @@ Here are the free heap values of running the example sketch:
 
 
 ## Change Log
+
+#### v1.1.0
+* Memory optimization: moved String/byte constants as much as possible to Flash. The `RODATA` section of `bin` is only 4672. Extra ~20K free-heap is available compared with v1.0.1.
+* Upload a [`nossl` and `noleak` version](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/ESP8266WiFi_nossl_noleak) of the official `ESP8266WiFi` library of Arduino Core 2.6.3. Removed all codes of `SSL` to save memory (extra ~3K) since the HomeKit does not require SSL. Fix the memory-leak in `WiFiClinet.stop()` by adding `tcp_abandon(_pcb, 0)` in `stop()`, based on the idea of [esp8266/Arduino/pull/2767](https://github.com/esp8266/Arduino/pull/2767).
 
 #### v1.0.1 
 * Reduce `winsize` from `3` to `2`(same performance) to lower the heap required. Pairing can be done with low free-heap of ~14000.

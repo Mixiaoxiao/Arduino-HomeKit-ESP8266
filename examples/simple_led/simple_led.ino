@@ -19,9 +19,6 @@
 #include "ButtonDebounce.h"
 #include "ButtonHandler.h"
 
-#define PL(s) Serial.println(s)
-#define P(s) Serial.print(s)
-
 //D0 16 //led
 //D3  0 //flash button
 //D4  2 //led
@@ -30,6 +27,8 @@
 
 const char *ssid = "your-ssid";
 const char *password = "your-password";
+
+#define SIMPLE_INFO(fmt, ...)   printf_P(PSTR(fmt "\n") , ##__VA_ARGS__);
 
 void blink_led(int interval, int count) {
 	for (int i = 0; i < count; i++) {
@@ -52,27 +51,26 @@ void setup() {
 	WiFi.setAutoReconnect(true);
 	WiFi.begin(ssid, password);
 
-	printf("\n");
-	printf("SketchSize: %d B\n", ESP.getSketchSize());
-	printf("FreeSketchSpace: %d B\n", ESP.getFreeSketchSpace());
-	printf("FlashChipSize: %d B\n", ESP.getFlashChipSize());
-	printf("FlashChipRealSize: %d B\n", ESP.getFlashChipRealSize());
-	printf("FlashChipSpeed: %d\n", ESP.getFlashChipSpeed());
-	printf("SdkVersion: %s\n", ESP.getSdkVersion());
-	printf("FullVersion: %s\n", ESP.getFullVersion().c_str());
-	printf("CpuFreq: %dMHz\n", ESP.getCpuFreqMHz());
-	printf("FreeHeap: %d B\n", ESP.getFreeHeap());
-	printf("ResetInfo: %s\n", ESP.getResetInfo().c_str());
-	printf("ResetReason: %s\n", ESP.getResetReason().c_str());
-	DEBUG_HEAP();
+	SIMPLE_INFO("");
+	SIMPLE_INFO("SketchSize: %d", ESP.getSketchSize());
+	SIMPLE_INFO("FreeSketchSpace: %d", ESP.getFreeSketchSpace());
+	SIMPLE_INFO("FlashChipSize: %d", ESP.getFlashChipSize());
+	SIMPLE_INFO("FlashChipRealSize: %d", ESP.getFlashChipRealSize());
+	SIMPLE_INFO("FlashChipSpeed: %d", ESP.getFlashChipSpeed());
+	SIMPLE_INFO("SdkVersion: %s", ESP.getSdkVersion());
+	SIMPLE_INFO("FullVersion: %s", ESP.getFullVersion().c_str());
+	SIMPLE_INFO("CpuFreq: %dMHz", ESP.getCpuFreqMHz());
+	SIMPLE_INFO("FreeHeap: %d", ESP.getFreeHeap());
+	SIMPLE_INFO("ResetInfo: %s", ESP.getResetInfo().c_str());
+	SIMPLE_INFO("ResetReason: %s", ESP.getResetReason().c_str());
+	INFO_HEAP();
 	homekit_setup();
-	DEBUG_HEAP();
+	INFO_HEAP();
 	blink_led(200, 3);
 }
 
 void loop() {
 	homekit_loop();
-	delay(5);
 }
 
 void builtinledSetStatus(bool on) {
@@ -96,55 +94,46 @@ void IRAM_ATTR btnInterrupt() {
 	btn.update();
 }
 
-uint32_t next_heap_millis = 0;
-
 void homekit_setup() {
 	accessory_init();
 	uint8_t mac[WL_MAC_ADDR_LENGTH];
 	WiFi.macAddress(mac);
 	int name_len = snprintf(NULL, 0, "%s_%02X%02X%02X",
 			name.value.string_value, mac[3], mac[4], mac[5]);
-	char *name_value = (char*)malloc(name_len + 1);
+	char *name_value = (char*) malloc(name_len + 1);
 	snprintf(name_value, name_len + 1, "%s_%02X%02X%02X",
 			name.value.string_value, mac[3], mac[4], mac[5]);
 	name.value = HOMEKIT_STRING_CPP(name_value);
 
 	arduino_homekit_setup(&config);
 
-	btn.setCallback([](const bool down) {
-		btnHandler.handleChange(down);
-	});
+	btn.setCallback(std::bind(&ButtonHandler::handleChange, &btnHandler,
+			std::placeholders::_1));
 	btn.setInterrupt(btnInterrupt);
-
-	btnHandler.setIsDownFunction([](void) {
-		return btn.checkIsDown();
+	btnHandler.setIsDownFunction(std::bind(&ButtonDebounce::checkIsDown, &btn));
+	btnHandler.setCallback([](button_event e) {
+		if (e == BUTTON_EVENT_SINGLECLICK) {
+			SIMPLE_INFO("Button Event: SINGLECLICK");
+			led_toggle();
+		} else if (e == BUTTON_EVENT_DOUBLECLICK) {
+			SIMPLE_INFO("Button Event: DOUBLECLICK");
+			occupancy_toggle();
+		} else if (e == BUTTON_EVENT_LONGCLICK) {
+			SIMPLE_INFO("Button Event: LONGCLICK");
+			SIMPLE_INFO("Rebooting...");
+			homekit_storage_reset();
+			ESP.restart(); // or system_restart();
+		}
 	});
-	btnHandler.setCallback([](const button_event e) {
-		P(F("Button Event: "));
-		switch (e) {
-		case BUTTON_EVENT_SINGLECLICK:
-		PL(F("SINGLECLICK"));
-		led_toggle();
-		break;
-	case BUTTON_EVENT_DOUBLECLICK:
-		PL(F("DOUBLECLICK"));
-		occupancy_toggle();
-		break;
-	case BUTTON_EVENT_LONGCLICK:
-		PL(F("LONGCLICK"));
-		homekit_storage_reset();
-		system_restart();
-		break;
-	}
-}	);
 }
 
 void homekit_loop() {
 	btnHandler.loop();
 	arduino_homekit_loop();
+	static uint32_t next_heap_millis = 0;
 	uint32_t time = millis();
 	if (time > next_heap_millis) {
-		INFO("heap: %d, sockets: %d",
+		SIMPLE_INFO("heap: %d, sockets: %d",
 				ESP.getFreeHeap(), arduino_homekit_connected_clients_count());
 		next_heap_millis = time + 5000;
 	}

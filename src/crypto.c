@@ -1,7 +1,6 @@
 #include <string.h>
 
-// #include "user_settings.h"
-// #include <wolfssl/ssl.h>
+#include "user_settings.h"
 #include <wolfssl/wolfcrypt/hmac.h>
 #include <wolfssl/wolfcrypt/ed25519.h>
 #include <wolfssl/wolfcrypt/curve25519.h>
@@ -12,9 +11,13 @@
 
 #include "homekit_debug.h"
 #include "port.h"
+#include <pgmspace.h>
 
 // 3072-bit group N (per RFC5054, Appendix A)
-const byte N[] = {
+// ~384-byte
+#define N_SIZE 384
+
+const byte PROGMEM N[] = {
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xc9, 0x0f, 0xda, 0xa2,
   0x21, 0x68, 0xc2, 0x34, 0xc4, 0xc6, 0x62, 0x8b, 0x80, 0xdc, 0x1c, 0xd1,
   0x29, 0x02, 0x4e, 0x08, 0x8a, 0x67, 0xcc, 0x74, 0x02, 0x0b, 0xbe, 0xa6,
@@ -109,7 +112,10 @@ int crypto_srp_init(Srp *srp, const char *username, const char *password) {
     }
 
     DEBUG("Setting SRP params");
-    r = wc_SrpSetParams(srp, N, sizeof(N), g, sizeof(g), salt, sizeof(salt));
+    // Ref: https://arduino-esp8266.readthedocs.io/en/2.6.3/PROGMEM.html
+	byte N_ram[N_SIZE];
+	memcpy_P(N_ram, N, N_SIZE);
+    r = wc_SrpSetParams(srp, N_ram, N_SIZE, g, sizeof(g), salt, sizeof(salt));
     if (r) {
         DEBUG("Failed to set SRP params (code %d)", r);
         return r;
@@ -443,13 +449,18 @@ int crypto_ed25519_verify(
     const byte *message, size_t message_size,
     const byte *signature, size_t signature_size
 ) {
+#if defined(ARDUINO_HOMEKIT_SKIP_ED25519_VERIFY)
+	return 0;
+#else
     int verified;
     int r = wc_ed25519_verify_msg(
         signature, signature_size,
         message, message_size,
         &verified, (ed25519_key *)key
     );
+    //return (r == 0) && (verified == 1);
     return !r && !verified;
+#endif
 }
 
 

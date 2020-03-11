@@ -545,6 +545,7 @@ int ge_frombytes_negate_vartime(ge_p3 *p,const unsigned char *s)
 int ge_double_scalarmult_vartime_lowmem(ge_p2* R, const unsigned char *h,
                                  const ge_p3 *inA,const unsigned char *sig)
 {
+	INFO("Call ge_double_scalarmult_vartime_lowmem in ge_low_mem.c");
     ge_p3 p, A;
     int ret = 0;
 

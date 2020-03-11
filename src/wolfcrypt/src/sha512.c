@@ -368,7 +368,9 @@ static int InitSha512(wc_Sha512* sha512)
 
 #endif /* Hardware Acceleration */
 
-static const word64 K512[80] = {
+#include <pgmspace.h>
+
+static const PROGMEM word64 K512[80] = {
     W64LIT(0x428a2f98d728ae22), W64LIT(0x7137449123ef65cd),
     W64LIT(0xb5c0fbcfec4d3b2f), W64LIT(0xe9b5dba58189dbbc),
     W64LIT(0x3956c25bf348b538), W64LIT(0x59f111f1b605d019),
@@ -444,7 +446,9 @@ static const word64 K512[80] = {
 
 static int _Transform_Sha512(wc_Sha512* sha512)
 {
-    const word64* K = K512;
+    //const word64* K = K512;
+	word64 K[80];
+	memcpy_P(K, K512, sizeof(K));
     word32 j;
     word64 T[8];
 
