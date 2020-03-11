@@ -76,11 +76,11 @@ I tried to make WolfSSL crypto work safely on ESP8266 with better performance an
 
 Here are the free heap values of running the example sketch:
 
-* ~~Boot: ~26000~~
-* ~~Preinit over: ~22000~~
-* ~~Pairing: ~17000 (or even low when crypto computing)~~
-* ~~Paired and connected with one iOS device: ~21700~~
-* ~~Paired and no iOS device connected: ~23400~~
+* Boot: ~26000
+* Preinit over: ~22000
+* Pairing: ~17000 (or even low when crypto computing)
+* Paired and connected with one iOS device: ~21700
+* Paired and no iOS device connected: ~23400
 
 After memory optimization in v1.1.0:
 
@@ -143,14 +143,14 @@ After memory optimization in v1.1.0:
 
 ## Troubleshooting
 
-* Check your serial output with [example_serial_output.txt](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/example_serial_output.txt)
+* Check your serial output with [example_serial_output.txt](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/example_serial_output_v1.1.0.txt)
 
 
 ## Change Log
 
 #### v1.1.0
 * Memory optimization: moved String/byte constants as much as possible to Flash. The `RODATA` section of `bin` is only 4672. Extra ~20K free-heap is available compared with v1.0.1.
-* Upload a [`nossl` and `noleak` version](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/ESP8266WiFi_nossl_noleak) of the official `ESP8266WiFi` library of Arduino Core 2.6.3. Removed all codes of `SSL` to save memory (extra ~3K) since the HomeKit does not require SSL. Fix the memory-leak in `WiFiClinet.stop()` by adding `tcp_abandon(_pcb, 0)` in `stop()`, based on the idea of [esp8266/Arduino/pull/2767](https://github.com/esp8266/Arduino/pull/2767).
+* Upload [ESP8266WiFi_nossl_noleak](https://github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/tree/master/extras/ESP8266WiFi_nossl_noleak/), a `nossl` and `noleak` version of the official `ESP8266WiFi` library of Arduino Core 2.6.3. Removed all codes of `SSL` to save memory (extra ~3K) since the HomeKit does not require SSL. Fix the memory-leak in `WiFiClinet.stop()` by adding `tcp_abandon(_pcb, 0)` in `stop()`, based on the idea of [esp8266/Arduino/pull/2767](https://github.com/esp8266/Arduino/pull/2767).
 
 #### v1.0.1 
 * Reduce `winsize` from `3` to `2`(same performance) to lower the heap required. Pairing can be done with low free-heap of ~14000.
