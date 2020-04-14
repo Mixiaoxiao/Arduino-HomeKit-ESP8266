@@ -1,6 +1,6 @@
 # Arduino HomeKit ESP8266 
 
-## Apple HomeKit accessory server library for ESP8266 Arduino
+## Apple HomeKit accessory server library for ESP8266/ESP32 Arduino
 
 This Arduino library is a native Apple HomeKit accessory implementation for the [ESP8266 Arduino core](https://github.com/esp8266/Arduino), and works without any additional bridges.
 
@@ -13,6 +13,40 @@ Enjoy the "one-key" build, "one-key" upload, and work to link various other Ardu
 Here is a [discussion](https://github.com/HomeACcessoryKid/Arduino-HomeKit/issues/1) about the RTOS is required for running Apple HomeKit, and this project is a proof of concept that Apple HomeKit can be implemented and work fine without the RTOS.
 
 This library is built with ESP8266 Arduino Core 2.6.3. Lower versions may compile with errors.
+
+## ESP32 is supported now (2020-04-15)
+
+Checkout the "ESP32 HomeKit" folder.
+
+This is a "only-can-work" version for ESP32 without merged into the original library. There remains something to be optimized.
+
+The `WolfSSL` used for ESP32 is based on `4.3.0-stable` version with **Hardware Acceleration Support**.
+
+The HomeKit running on ESP32 has a **GREAT PERFORMANCE** which Pair-Setup can be done in ~1.2s and Pair-Verify in < 0.1s (10x faster than ESP8266).
+
+The HomeKit storage on ESP32 is based on `nvs`.
+
+#### Performance WITH Hardware Acceleration on ESP32
+
+* Preinit: ~0.53s
+* Pair Setup Step 1/3: ~0s (The heavy crypto computation is done in Preinit)
+* Pair Setup Step 2/3: ~0.53s 
+* Pair Setup Step 3/3: ~0.20s 
+* Pair Verify Step 1/2: ~0.05s
+* Pair Verify Step 2/2: ~0.02s
+
+#### Performance WITHOUT Hardware Acceleration on ESP32
+
+* Preinit: ~2.2s
+* Pair Setup Step 1/3: ~0s (The heavy crypto computation is done in Preinit)
+* Pair Setup Step 2/3: ~2.5s 
+* Pair Setup Step 3/3: ~0.1s 
+* Pair Verify Step 1/2: ~0.06s
+* Pair Verify Step 2/2: ~0.03s
+
+## The following content is for ESP8266 only
+
+This readme will be refactored in next version.
 
 ## Preview
 
@@ -54,7 +88,7 @@ This library is built with ESP8266 Arduino Core 2.6.3. Lower versions may compil
 	```
 Done.
 
-## Performance 
+## Performance
 
 Notice: You should set the ESP8266 CPU to run at 160MHz (at least during the pairing process), to avoid the tcp-socket disconnection from iOS device caused by timeout.
 
