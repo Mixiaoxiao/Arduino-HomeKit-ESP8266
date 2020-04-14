@@ -29,7 +29,13 @@ typedef struct {
 
     homekit_accessory_category_t category;
 
-    int config_number;
+    // Used for Bonjour
+	// Current configuration number. Required.
+	// Must update when an accessory, service, or characteristic is added or removed on the accessory server.
+	// Accessories must increment the config number after a firmware update.
+	// This must have a range of 1-65535 and wrap to 1 when it overflows.
+	// This value must persist across reboots, power cycles, etc.
+    uint16_t config_number;
 
     // Password in format "111-23-456".
     // If password is not specified, a random password

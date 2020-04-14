@@ -5016,9 +5016,8 @@ static const ge_precomp base[32][8] = {
 },
 };
 #else
-#include <pgmspace.h>
 /* base[i][j] = (j+1)*256^i*B */
-static const PROGMEM ge_precomp base[32][8] = {
+static const ge_precomp ICACHE_RODATA_ATTR base[32][8] = {
 {
  {
   { 25967493,-14356035,29566456,3660896,-12694345,4014787,27544626,-11754271,-6079156,2047605 },
@@ -6365,26 +6364,7 @@ static const PROGMEM ge_precomp base[32][8] = {
 },
 } ;
 #endif
-//base[32][8]
-//ge_precomp *base0 = &base[0];
-//ge_precomp *base1 = &base[1];
-//ge_precomp *base2 = &base[2];
-//ge_precomp *base3 = &base[3];
-//ge_precomp *base4 = &base[4];
-//ge_precomp *base5 = &base[5];
-//ge_precomp *base6 = &base[6];
-//ge_precomp *base7 = &base[7];
 
-//static const PROGMEM ge_precomp *(baseP[32]) = {&base[0],&base[1],&base[2],&base[3],
-//		&base[4],&base[5],&base[6],&base[7],&base[8],&base[9],
-//		&base[10],&base[11],&base[12],&base[13],&base[14],&base[15],
-//		&base[16],&base[17],&base[18],&base[19],&base[20],&base[21],
-//		&base[22],&base[23],&base[24],&base[25],&base[26],&base[27],
-//		&base[28],&base[29],&base[30],&base[31]};
-static const PROGMEM ge_precomp *(basePP[32*8]) ={
-&base[0][0],&base[0][1],&base[0][2],&base[0][3],&base[0][4],&base[0][5],&base[0][6],&base[0][7],&base[1][0],&base[1][1],&base[1][2],&base[1][3],&base[1][4],&base[1][5],&base[1][6],&base[1][7],&base[2][0],&base[2][1],&base[2][2],&base[2][3],&base[2][4],&base[2][5],&base[2][6],&base[2][7],&base[3][0],&base[3][1],&base[3][2],&base[3][3],&base[3][4],&base[3][5],&base[3][6],&base[3][7],&base[4][0],&base[4][1],&base[4][2],&base[4][3],&base[4][4],&base[4][5],&base[4][6],&base[4][7],&base[5][0],&base[5][1],&base[5][2],&base[5][3],&base[5][4],&base[5][5],&base[5][6],&base[5][7],&base[6][0],&base[6][1],&base[6][2],&base[6][3],&base[6][4],&base[6][5],&base[6][6],&base[6][7],&base[7][0],&base[7][1],&base[7][2],&base[7][3],&base[7][4],&base[7][5],&base[7][6],&base[7][7],&base[8][0],&base[8][1],&base[8][2],&base[8][3],&base[8][4],&base[8][5],&base[8][6],&base[8][7],&base[9][0],&base[9][1],&base[9][2],&base[9][3],&base[9][4],&base[9][5],&base[9][6],&base[9][7],&base[10][0],&base[10][1],&base[10][2],&base[10][3],&base[10][4],&base[10][5],&base[10][6],&base[10][7],&base[11][0],&base[11][1],&base[11][2],&base[11][3],&base[11][4],&base[11][5],&base[11][6],&base[11][7],&base[12][0],&base[12][1],&base[12][2],&base[12][3],&base[12][4],&base[12][5],&base[12][6],&base[12][7],&base[13][0],&base[13][1],&base[13][2],&base[13][3],&base[13][4],&base[13][5],&base[13][6],&base[13][7],&base[14][0],&base[14][1],&base[14][2],&base[14][3],&base[14][4],&base[14][5],&base[14][6],&base[14][7],&base[15][0],&base[15][1],&base[15][2],&base[15][3],&base[15][4],&base[15][5],&base[15][6],&base[15][7],&base[16][0],&base[16][1],&base[16][2],&base[16][3],&base[16][4],&base[16][5],&base[16][6],&base[16][7],&base[17][0],&base[17][1],&base[17][2],&base[17][3],&base[17][4],&base[17][5],&base[17][6],&base[17][7],&base[18][0],&base[18][1],&base[18][2],&base[18][3],&base[18][4],&base[18][5],&base[18][6],&base[18][7],&base[19][0],&base[19][1],&base[19][2],&base[19][3],&base[19][4],&base[19][5],&base[19][6],&base[19][7],&base[20][0],&base[20][1],&base[20][2],&base[20][3],&base[20][4],&base[20][5],&base[20][6],&base[20][7],&base[21][0],&base[21][1],&base[21][2],&base[21][3],&base[21][4],&base[21][5],&base[21][6],&base[21][7],&base[22][0],&base[22][1],&base[22][2],&base[22][3],&base[22][4],&base[22][5],&base[22][6],&base[22][7],&base[23][0],&base[23][1],&base[23][2],&base[23][3],&base[23][4],&base[23][5],&base[23][6],&base[23][7],&base[24][0],&base[24][1],&base[24][2],&base[24][3],&base[24][4],&base[24][5],&base[24][6],&base[24][7],&base[25][0],&base[25][1],&base[25][2],&base[25][3],&base[25][4],&base[25][5],&base[25][6],&base[25][7],&base[26][0],&base[26][1],&base[26][2],&base[26][3],&base[26][4],&base[26][5],&base[26][6],&base[26][7],&base[27][0],&base[27][1],&base[27][2],&base[27][3],&base[27][4],&base[27][5],&base[27][6],&base[27][7],&base[28][0],&base[28][1],&base[28][2],&base[28][3],&base[28][4],&base[28][5],&base[28][6],&base[28][7],&base[29][0],&base[29][1],&base[29][2],&base[29][3],&base[29][4],&base[29][5],&base[29][6],&base[29][7],&base[30][0],&base[30][1],&base[30][2],&base[30][3],&base[30][4],&base[30][5],&base[30][6],&base[30][7],&base[31][0],&base[31][1],&base[31][2],&base[31][3],&base[31][4],&base[31][5],&base[31][6],&base[31][7]};
-//REF: https://www.arduino.cn/thread-32013-1-1.html
-//https://github.com/esp8266/Arduino/blob/master/doc/PROGMEM.rst
 
 static void ge_select(ge_precomp *t,int pos,signed char b)
 {
@@ -6394,36 +6374,6 @@ static void ge_select(ge_precomp *t,int pos,signed char b)
   unsigned char babs = b - (((-bnegative) & b) << 1);
 
   ge_precomp_0(t);
-
-    ge_precomp base_ram[1];
-    int i;
-  	for (i = 0; i < 8; i++) {
-  		memcpy_P(base_ram, pgm_read_ptr(&(basePP[pos * 8 + i])),
-  				sizeof(ge_precomp));
-  		cmov(t, base_ram, babs, (i + 1));
-  	}
-  /*
-   	cmov(t,&base_pos[0],babs,1);
-  	cmov(t,&base_pos[1],babs,2);
-  	cmov(t,&base_pos[2],babs,3);
-  	cmov(t,&base_pos[3],babs,4);
-  	cmov(t,&base_pos[4],babs,5);
-  	cmov(t,&base_pos[5],babs,6);
-  	cmov(t,&base_pos[6],babs,7);
-  	cmov(t,&base_pos[7],babs,8);
-  /*
-  ge_precomp base_pos;
-  int i;
-  for(i=0; i<8; i++){
-	  memcpy_P(&base_pos, (pgm_read_ptr(&(baseP[pos]))
-			  + (sizeof(ge_precomp) / 4 * i )) ,
-			  sizeof(ge_precomp) * 1);
-//	  memcpy_P(&base_pos, pgm_read_ptr(&(base[pos][i])),
-//	  			  sizeof(ge_precomp));
-	  cmov(t,&base_pos,babs,(i+1));
-  }*/
-
-  /*
   cmov(t,&base[pos][0],babs,1);
   cmov(t,&base[pos][1],babs,2);
   cmov(t,&base[pos][2],babs,3);
@@ -6431,7 +6381,7 @@ static void ge_select(ge_precomp *t,int pos,signed char b)
   cmov(t,&base[pos][4],babs,5);
   cmov(t,&base[pos][5],babs,6);
   cmov(t,&base[pos][6],babs,7);
-  cmov(t,&base[pos][7],babs,8);*/
+  cmov(t,&base[pos][7],babs,8);
   fe_cswap(t->yminusx, t->yplusx, bnegative);
   fe_neg(minust.xy2d,t->xy2d);
   fe_cmov(t->xy2d,minust.xy2d,bnegative);
@@ -6635,7 +6585,7 @@ static const ge_precomp Bi[8] = {
     },
 };
 #else
-static const ge_precomp Bi[8] = {
+static const ge_precomp ICACHE_RODATA_ATTR Bi[8] = {
  {
   { 25967493,-14356035,29566456,3660896,-12694345,4014787,27544626,-11754271,-6079156,2047605 },
   { -12545711,934262,-2722910,3049990,-727428,9406986,12720692,5043384,19500929,-15469378 },

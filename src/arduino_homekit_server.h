@@ -230,6 +230,7 @@ void arduino_homekit_loop();
 
 homekit_server_t * arduino_homekit_get_running_server();
 int arduino_homekit_connected_clients_count();
+void homekit_update_config_number();
 
 #ifdef __cplusplus
 }

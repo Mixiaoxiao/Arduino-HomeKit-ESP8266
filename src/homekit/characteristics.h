@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define HOMEKIT_SHORT_APPLE_UUIDS
+
 // MARK: - Apple UUID
 
 #ifdef HOMEKIT_SHORT_APPLE_UUIDS

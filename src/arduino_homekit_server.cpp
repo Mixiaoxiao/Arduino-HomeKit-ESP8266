@@ -80,7 +80,7 @@ homekit_server_t* server_new() {
 	server->wifi_server = new WiFiServer(HOMEKIT_SERVER_PORT);
 	server->wifi_server->begin();
 	server->wifi_server->setNoDelay(true);
-	DEBUG("WiFiServer begin at port: %d\n", HOMEKIT_ARDUINO_SERVER_PORT);
+	DEBUG("WiFiServer begin at port: %d", HOMEKIT_SERVER_PORT);
 	//FD_ZERO(&server->fds);
 	//server->max_fd = 0;
 	server->nfds = 0;
@@ -108,7 +108,8 @@ void server_free(homekit_server_t *server) {
 		server->wifi_server->close();
 		delete server->wifi_server;
 		server->wifi_server = nullptr;
-	}DEBUG("homekit_server_t delete WiFiServer at port: %d\n", HOMEKIT_ARDUINO_SERVER_PORT);
+	}
+	DEBUG("homekit_server_t delete WiFiServer at port: %d\n", HOMEKIT_SERVER_PORT);
 
 	if (server == running_server) {
 		running_server = NULL;
@@ -420,7 +421,7 @@ void write_characteristic_json(json_stream *json, client_context_t *client,
 		homekit_value_t v = value ? *value : ch->getter_ex ? ch->getter_ex(ch) : ch->value;
 
 		if (v.is_null) {
-			// json_string(json, "value"); json_null(json);
+			 json_string(json, "value"); json_null(json);
 		} else if (v.format != ch->format) {
 			ERROR("Characteristic value format is different from characteristic format");
 		} else {
@@ -1868,7 +1869,7 @@ bool bool_endpoint_param(const char *name, client_context_t *context) {
 	return param && param->value && !strcmp(param->value, "1");
 }
 
-void write_characteristic_error(json_stream *json, int aid, int iid, int status) {
+void write_characteristic_error(json_stream *json, uint32_t aid, uint32_t iid, int status) {
 	json_object_start(json);
 	json_string(json, "aid");
 	json_uint32(json, aid);
@@ -1922,10 +1923,10 @@ void homekit_server_on_get_characteristics(client_context_t *context) {
 		}
 
 		*dot = 0;
-		int aid = atoi(ch_id);
-		int iid = atoi(dot + 1);
+		uint32_t aid = atoi(ch_id);
+		uint32_t iid = atoi(dot + 1);
 
-		CLIENT_DEBUG(context, "Requested characteristic info for %d.%d", aid, iid);
+		CLIENT_DEBUG(context, "Requested characteristic info for %u.%u", aid, iid);
 		homekit_characteristic_t *ch = homekit_characteristic_by_aid_and_iid(
 				context->server->config->accessories, aid, iid);
 		if (!ch) {
@@ -1957,8 +1958,8 @@ void homekit_server_on_get_characteristics(client_context_t *context) {
 	while ((ch_id = strsep(&_id, ","))) {
 		char *dot = strstr(ch_id, ".");
 		*dot = 0;
-		int aid = atoi(ch_id);
-		int iid = atoi(dot + 1);
+		uint32_t aid = atoi(ch_id);
+		uint32_t iid = atoi(dot + 1);
 
 		CLIENT_DEBUG(context, "Requested characteristic info for %d.%d", aid, iid);
 		homekit_characteristic_t *ch = homekit_characteristic_by_aid_and_iid(
@@ -2014,14 +2015,14 @@ HAPStatus process_characteristics_update(const cJSON *j_ch, client_context_t *co
 		return HAPStatus_NoResource;
 	}
 
-	int aid = j_aid->valueint;
-	int iid = j_iid->valueint;
+	uint32_t aid = (uint32_t)j_aid->valuedouble;//j_aid->valueint;
+	uint32_t iid = (uint32_t)j_iid->valuedouble;//j_iid->valueint;
 
 	homekit_characteristic_t *ch = homekit_characteristic_by_aid_and_iid(
 			context->server->config->accessories, aid, iid);
 	if (!ch) {
 		CLIENT_ERROR(context,
-				"Failed to process request to update %d.%d: " "no such characteristic", aid, iid);
+				"Failed to process request to update %u.%u: " "no such characteristic", aid, iid);
 		return HAPStatus_NoResource;
 	}
 
@@ -2174,8 +2175,7 @@ HAPStatus process_characteristics_update(const cJSON *j_ch, client_context_t *co
 
 			default:
 				CLIENT_ERROR(context, "Unexpected format when updating numeric value: %d",
-						ch->format)
-				;
+						ch->format);
 				return HAPStatus_InvalidValue;
 			}
 
@@ -2424,9 +2424,9 @@ void homekit_server_on_update_characteristics(client_context_t *context, const b
 
 			json_object_start(json1);
 			json_string(json1, "aid");
-			json_uint32(json1, cJSON_GetObjectItem(j_ch, "aid")->valueint);
+			json_uint32(json1, cJSON_GetObjectItem(j_ch, "aid")->valuedouble);//->valueint);
 			json_string(json1, "iid");
-			json_uint32(json1, cJSON_GetObjectItem(j_ch, "iid")->valueint);
+			json_uint32(json1, cJSON_GetObjectItem(j_ch, "iid")->valuedouble);//->valueint);
 			json_string(json1, "status");
 			json_uint8(json1, statuses[i]);
 			json_object_end(json1);
@@ -2897,7 +2897,7 @@ void homekit_client_process(client_context_t *context) {
 		}
 		return;
 	}
-	CLIENT_DEBUG(context, "Got %d incomming data, encrypted is %",
+	CLIENT_DEBUG(context, "Got %d incomming data, encrypted is %s",
 			data_len, context->encrypted ? "true" : "false");
 	byte *payload = (byte*) context->data;
 	size_t payload_size = (size_t) data_len;
@@ -3164,7 +3164,7 @@ void homekit_mdns_init(homekit_server_t *server) {
 	if (homekit_mdns_started) {
 		MDNS.close();
 		MDNS.begin(name->value.string_value, staIP);
-		INFO("MDNS.restart: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
+		INFO("MDNS restart: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
 		MDNS.announce();
 		return;
 	}
@@ -3173,7 +3173,7 @@ void homekit_mdns_init(homekit_server_t *server) {
 	WiFi.hostname(name->value.string_value);
 	// Must specify the MDNS runs on the IP of STA
 	MDNS.begin(name->value.string_value, staIP);
-	INFO("MDNS.begin: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
+	INFO("MDNS begin: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
 
 	MDNSResponder::hMDNSService mdns_service = MDNS.addService(name->value.string_value,
 	HOMEKIT_MDNS_SERVICE, HOMEKIT_MDNS_PROTO, HOMEKIT_SERVER_PORT);
@@ -3185,6 +3185,8 @@ void homekit_mdns_init(homekit_server_t *server) {
 				if (running_server) {
 					MDNS.addDynamicServiceTxt(p_hService, "sf",
 							(running_server->paired) ? "0" : "1");
+					MDNS.addDynamicServiceTxt(p_hService, "c#",
+							running_server->config->config_number);
 				}
 
 			}
@@ -3192,7 +3194,13 @@ void homekit_mdns_init(homekit_server_t *server) {
 	MDNS.addServiceTxt(mdns_service, "md", model->value.string_value);
 	MDNS.addServiceTxt(mdns_service, "pv", "1.0");
 	MDNS.addServiceTxt(mdns_service, "id", server->accessory_id);
-	MDNS.addServiceTxt(mdns_service, "c#", String(server->config->config_number).c_str());
+	//"c#" is a DynamicServiceTxt
+	//Current configuration number. Required.
+	//Must update when an accessory, service, or characteristic is added or removed on the accessory server.
+	//Accessories must increment the config number after a firmware update.
+	//This must have a range of 1-65535 and wrap to 1 when it overflows.
+	//This value must persist across reboots, power cycles, etc.
+	//MDNS.addServiceTxt(mdns_service, "c#", String(server->config->config_number).c_str());
 	MDNS.addServiceTxt(mdns_service, "s#", "1");
 	MDNS.addServiceTxt(mdns_service, "ff", "0");
 	//"sf" is a DynamicServiceTxt
@@ -3249,6 +3257,25 @@ void homekit_mdns_init(homekit_server_t *server) {
 	homekit_mdns_started = true;
 	//INFO("MDNS ok! Open your \"Home\" app, click \"Add or Scan Accessory\""
 	//		" and \"I Don't Have a Code\". \nThis Accessory will show on your iOS device.");
+}
+
+// Used to update the config_number ("c#" value of Bonjour)
+// Call this function when an accessory, service, or characteristic is added or removed on the accessory server.
+// See the official HAP specification for more information.
+void homekit_update_config_number() {
+	if(!homekit_mdns_started) {
+		return ;
+	}
+	if(!running_server){
+		return;
+	}
+	// range of 1-65535
+	uint16_t c = running_server->config->config_number;
+	c = (c > 0 && c < 65535) ? (c + 1) : 1;
+	running_server->config->config_number = c;
+	MDNS.announce();
+	MDNS.update();
+	INFO("Update config_number to %u", c);
 }
 
 int homekit_accessory_id_generate(char *accessory_id) {
@@ -3308,18 +3335,15 @@ void homekit_server_init(homekit_server_config_t *config) {
 	}
 
 	homekit_accessories_init(config->accessories);
-
 	if (!config->config_number) {
 		config->config_number = config->accessories[0]->config_number;
 		if (!config->config_number) {
 			config->config_number = 1;
 		}
 	}
-
 	if (!config->category) {
 		config->category = config->accessories[0]->category;
 	}
-
 	homekit_server_t *server = server_new();
 	running_server = server;
 	server->config = config;
@@ -3559,7 +3583,9 @@ void arduino_homekit_setup(homekit_server_config_t *config) {
 }
 
 void arduino_homekit_loop() {
-	MDNS.update();
+	if (homekit_mdns_started) {
+		MDNS.update();
+	}
 	if (running_server != nullptr) {
 		if (!running_server->paired) {
 			//If not paired or pairing was removed, preinit paring context.
