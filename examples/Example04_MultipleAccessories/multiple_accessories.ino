@@ -7,7 +7,7 @@
  *
  * This example is a bridge (aka a gateway) which contains multiple accessories.
  *
- * This example includes 5 sensors:
+ * This example includes 6 sensors:
  * 1. Temperature Sensor (HAP section 8.41)
  * 2. Humidity Sensor (HAP section 8.20)
  * 3. Light Sensor (HAP section 8.24)

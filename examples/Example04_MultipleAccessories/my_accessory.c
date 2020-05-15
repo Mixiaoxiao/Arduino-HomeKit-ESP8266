@@ -13,16 +13,6 @@ void my_accessory_identify(homekit_value_t _value) {
 	printf("accessory identify\n");
 }
 
-/*
- * This example includes 5 sensors:
- * 1. Temperature Sensor (HAP section 8.41)
- * 2. Humidity Sensor (HAP section 8.20)
- * 3. Light Sensor (HAP section 8.24)
- * 4. Contact Sensor (HAP section 8.9)
- * 5. Motion Sensor (HAP section 8.28)
- * 6. Occupancy Sensor (HAP section 8.29)
- */
-
 // format: float; min 0, max 100, step 0.1, unit celsius
 homekit_characteristic_t cha_temperature = HOMEKIT_CHARACTERISTIC_(CURRENT_TEMPERATURE, 1);
 
@@ -45,6 +35,9 @@ homekit_accessory_t *accessories[] = {
     HOMEKIT_ACCESSORY(.id=1, .category=homekit_accessory_category_bridge, .services=(homekit_service_t*[]) {
     	// HAP section 8.17:
     	// For a bridge accessory, only the primary HAP accessory object must contain this(INFORMATION) service.
+    	// But in my test,
+    	// the bridged accessories must contain an INFORMATION service,
+    	// otherwise the HomeKit will reject to pair.
     	HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
             HOMEKIT_CHARACTERISTIC(NAME, "Multiple Sensors"),
             HOMEKIT_CHARACTERISTIC(MANUFACTURER, "Arduino HomeKit"),
