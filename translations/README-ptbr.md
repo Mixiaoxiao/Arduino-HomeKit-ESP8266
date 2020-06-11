@@ -32,21 +32,21 @@ O armazenamento do HomeKit no ESP32 é baseado no `nvs`.
 
 #### Performance COM a Aceleração de Hardware no ESP32
 
-* Pré-inicialização: ~0.53s
-* Passo de Configuração do Pareamento 1/3: ~0s (A criptografia pesada é computada no passo de pré-inicialização)
-* Passo de Configuração do Pareamento 2/3: ~0.53s 
-* Passo de Configuração do Pareamento 3/3: ~0.20s 
-* Passo de Verificação do Pareamente 1/2: ~0.05s
-* Passo de Verificação do Pareamente 2/2: ~0.02s
+* Preinit: ~0.53s
+* Pair Setup Step 1/3: ~0s (A criptografia pesada é computada no passo de pré-inicialização)
+* Pair Setup Step 2/3: ~0.53s 
+* Pair Setup Step 3/3: ~0.20s 
+* Pair Verify Step 1/2: ~0.05s
+* Pair Verify Step 2/2: ~0.02s
 
 #### Performance SEM a Aceleração de Hardware no ESP32
 
-* Pré-inicialização: ~2.2s
-* Passo de Configuração 1/3: ~0s (A criptografia pesada é computada no passo de pré-inicialização)
-* Passo de Configuração do Pareamento 2/3: ~2.5s 
-* Passo de Configuração do Pareamento 3/3: ~0.1s 
-* Passo de Verificação 1/2 do Pareamente: ~0.06s
-* Passo de Verificação 2/2 do Pareamente: ~0.03s
+* Preinit: ~2.2s
+* Pair Setup Step 1/3: ~0s (A criptografia pesada é computada no passo de pré-inicialização)
+* Pair Setup Step 2/3: ~2.5s 
+* Pair Setup Step 3/3: ~0.1s 
+* Pair Verify Step: ~0.06s
+* Pair Verify Step: ~0.03s
 
 ## O conteúdo a seguir é apenas para o ESP8266
 
@@ -98,12 +98,12 @@ Pronto.
 
 Aviso: Você deve definir a CPU do ESP8266 rodando em 160MHz (ao menos durante o processo de pareamento), para evitar que o tcp-socket disconecte do dispositivo iOS causado pelo timeout.
 
-* Pré-inicialização: ~9,1s (Você pode ver o acessório no seu aplicativo CASA para iOS após a Pré-inicialização)
-* Passo de Configuração do Pareamento 1/3: ~0s (A criptografia pesada é computada no passo de pré-inicialização)
-* Passo de Configuração do Pareamento 2/3: ~12.1s 
-* Passo de Configuração do Pareamento 3/3: ~0.8s  (A configuração de pareamento apenas é precessada quando pareado a primeira vez com o dispositivo iOS)
-* Passo de Verificação do Pareamente 1/2: ~0.3s
-* Passo de Verificação do Pareamente 2/2: ~0.8s (O passo de verificação é requerido toda vez que o iOS conecta ou reconecta com o ESP8266 para estabelecer uma conexão segura)
+* Preinit: ~9,1s (Você pode ver o acessório no seu aplicativo CASA para iOS após a Pré-inicialização)
+* Pair Setup Step 1/3: ~0s (A criptografia pesada é computada no passo de pré-inicialização)
+* Pair Setup Step 2/3: ~12.1s 
+* Pair Setup Step 3/3: ~0.8s  (A configuração de pareamento apenas é precessada quando pareado a primeira vez com o dispositivo iOS)
+* Pair Verify Step 1/2: ~0.3s
+* Pair Verify Step 2/2: ~0.8s (O passo de verificação é requerido toda vez que o iOS conecta ou reconecta com o ESP8266 para estabelecer uma conexão segura)
 
 Todo processo de pareamento leva ~14s após você inserir o código de configuração no seu iPhone. Note que a Pré-inicialização requer ~9s antes de iniciar o pareamento.
 
