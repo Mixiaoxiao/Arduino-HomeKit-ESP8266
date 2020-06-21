@@ -132,7 +132,7 @@ After memory optimization in v1.1.0:
 * Debug Level: None (for lower memory use)
 * Espressif FW: nonos-sdk 2.2.1+119(191122) (which I used to build this project)
 * SSL Support: Basic SSL ciphers (lower ROM use)
-* VTables: Flash (does not matter maybe)
+* VTables: IRAM (otherwise you will need to specify ICACHE_RAM_ATTR for interrupt handlers)
 * Erase Flash: select `All Flash Contents` when you first upload
 * CPU Frequency: 160MHz (must)
 
