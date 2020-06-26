@@ -23,7 +23,7 @@ homekit_value_t HOMEKIT_BOOL_CPP(bool value) {
 	return homekit_value;
 }
 
-homekit_value_t HOMEKIT_INT_CPP(uint8_t value) {
+homekit_value_t HOMEKIT_INT_CPP(int value) {
 	homekit_value_t homekit_value = HOMEKIT_DEFAULT_CPP();
 	homekit_value.format = homekit_format_int;
 	homekit_value.int_value = value;

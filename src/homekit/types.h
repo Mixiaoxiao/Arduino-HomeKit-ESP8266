@@ -359,7 +359,7 @@ bool homekit_characteristic_has_notify_callback(
 //=========================
 homekit_value_t HOMEKIT_NULL_CPP();
 homekit_value_t HOMEKIT_BOOL_CPP(bool value) ;
-homekit_value_t HOMEKIT_INT_CPP(uint8_t value);
+homekit_value_t HOMEKIT_INT_CPP(int value);
 homekit_value_t HOMEKIT_UINT8_CPP(uint8_t value);
 homekit_value_t HOMEKIT_UINT16_CPP(uint16_t value);
 homekit_value_t HOMEKIT_UINT32_CPP(uint32_t value);
