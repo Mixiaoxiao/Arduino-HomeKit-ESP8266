@@ -1,11 +1,8 @@
 # Arduino HomeKit ESP8266 
 
-<details>
-<summary>Translations:</summary>
 
-- [Português Brasileiro](translations/README-ptbr.md)
+[中文说明](translations/README_cn.md) | [Português Brasileiro](translations/README-ptbr.md)
 
-</details>
 
 ## Apple HomeKit accessory server library for ESP8266 Arduino
 
