@@ -15,4 +15,5 @@
 ## QQ群：686409089
 
 更多对于ESP8266/ESP32开发以及HomeKit库的使用和交流，欢迎大家加群讨论：
+
 ![QQGroup](https://raw.github.com/Mixiaoxiao/Arduino-HomeKit-ESP8266/master/extras/qq_group_qrcode.png) 
