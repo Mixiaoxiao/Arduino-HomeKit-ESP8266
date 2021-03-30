@@ -145,6 +145,15 @@ After memory optimization in v1.1.0:
 
 ## Change Log
 
+#### v1.4.0
+
+* Add `yield()` while crypto computing, to prevent WiFi disconnection. The idea is from [BbIKTOP-issues80](https://github.com/Yurik72/ESPHap/issues/80#issuecomment-803685175)
+* One new example.
+
+#### v1.3.0
+
+* Small improvements.
+
 #### v1.2.0
 
 * New examples.
