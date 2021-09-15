@@ -14,8 +14,8 @@
 #include <WiFi.h>
 #endif
 
-const char *ssid = "your-ssid";
-const char *password = "your-password";
+const char *ssid = "MeineBox";
+const char *password = "Ronny23826?";
 
 void wifi_connect() {
 	WiFi.persistent(false);
