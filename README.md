@@ -175,4 +175,5 @@ After memory optimization in v1.1.0:
 * [WolfSSL/WolfCrypt](https://www.wolfssl.com/products/wolfcrypt-2/)
 * [cJSON](https://github.com/DaveGamble/cJSON)
 * [cQueue](https://github.com/SMFSW/cQueue)
+* [RuzgarErik](https://github.com/RuzgarErik)
 
