@@ -3162,7 +3162,6 @@ void homekit_mdns_init(homekit_server_t *server) {
 	}
 
 	if (homekit_mdns_started) {
-		MDNS.close();
 		MDNS.begin(name->value.string_value, staIP);
 		INFO("MDNS restart: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
 		MDNS.announce();
