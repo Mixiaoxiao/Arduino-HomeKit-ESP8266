@@ -14,7 +14,7 @@
 #include <wolfssl/wolfcrypt/hash.h> //wc_sha512
 
 #include "constants.h"
-#include "base64.h"
+#include "base64_util.h"
 #include "pairing.h"
 #include "storage.h"
 #include "query_params.h"
@@ -524,6 +524,10 @@ void write(client_context_t *context, byte *data, int data_size) {
 		CLIENT_ERROR(context, "The socket is null! (or is closed)");
 		return;
 	}
+	if (context->disconnect) {
+		context->error_write = true;
+		return;
+	}
 	if (context->error_write) {
 		CLIENT_ERROR(context, "Abort write data since error_write.");
 		return;
@@ -531,20 +535,10 @@ void write(client_context_t *context, byte *data, int data_size) {
 	int write_size = context->socket->write(data, data_size);
 	CLIENT_DEBUG(context, "Sending data of size %d", data_size);
 	if (write_size != data_size) {
-		CLIENT_ERROR(context, "socket.write, data_size=%d, write_size=%d", data_size, write_size);
 		context->error_write = true;
-		// Error write when :
-		// 1. remote client is disconnected
-		// 2. data_size is larger than the tcp internal send buffer
-		// But We has limited the data_size to 538, and TCP_SND_BUF = 1072. (See the comments on HOMEKIT_JSONBUFFER_SIZE)
-		// So we believe here is disconnected.
-		context->disconnect = true;
-		homekit_server_close_client(context->server, context);
-		// We consider the socket is 'closed' when error in writing (eg. the remote client is disconnected, NO tcp ack receive).
-		// Closing the socket causes memory-leak if some data has not been sent (the write_buffer did not free)
-		// To fix this memory-leak, add tcp_abandon(_pcb, 0); in ClientContext.h of ESP8266WiFi-library.
+		context->socket->keepAlive(1, 1, 1);	// fast disconnected internally in 1 second.
+		CLIENT_ERROR(context, "socket.write, data_size=%d, write_size=%d", data_size, write_size);
 	}
-
 }
 
 int client_send_encrypted_(client_context_t *context,
@@ -2699,9 +2693,6 @@ void homekit_server_on_reset(client_context_t *context) {
 
 	homekit_server_reset();
 	send_204_response(context);
-
-	//vTaskDelay(3000 / portTICK_PERIOD_MS);
-
 	homekit_system_restart();
 }
 
@@ -3141,28 +3132,30 @@ void homekit_mdns_init(homekit_server_t *server) {
 
 	homekit_accessory_t *accessory = server->config->accessories[0];
 	homekit_service_t *accessory_info = homekit_service_by_type(accessory,
-	HOMEKIT_SERVICE_ACCESSORY_INFORMATION);
+    HOMEKIT_SERVICE_ACCESSORY_INFORMATION);
 	if (!accessory_info) {
 		ERROR("Invalid accessory declaration: no Accessory Information service");
 		return;
 	}
 
 	homekit_characteristic_t *name = homekit_service_characteristic_by_type(accessory_info,
-	HOMEKIT_CHARACTERISTIC_NAME);
+    HOMEKIT_CHARACTERISTIC_NAME);
+
 	if (!name) {
 		ERROR("Invalid accessory declaration: " "no Name characteristic in AccessoryInfo service");
 		return;
 	}
-
+ 
 	homekit_characteristic_t *model = homekit_service_characteristic_by_type(accessory_info,
-	HOMEKIT_CHARACTERISTIC_MODEL);
+    HOMEKIT_CHARACTERISTIC_MODEL);
+
 	if (!model) {
 		ERROR("Invalid accessory declaration: " "no Model characteristic in AccessoryInfo service");
 		return;
 	}
 
 	if (homekit_mdns_started) {
-		MDNS.close();
+		// MDNS.close();
 		MDNS.begin(name->value.string_value, staIP);
 		INFO("MDNS restart: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
 		MDNS.announce();
@@ -3176,7 +3169,7 @@ void homekit_mdns_init(homekit_server_t *server) {
 	INFO("MDNS begin: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
 
 	MDNSResponder::hMDNSService mdns_service = MDNS.addService(name->value.string_value,
-	HOMEKIT_MDNS_SERVICE, HOMEKIT_MDNS_PROTO, HOMEKIT_SERVER_PORT);
+    HOMEKIT_MDNS_SERVICE, HOMEKIT_MDNS_PROTO, HOMEKIT_SERVER_PORT);
 	// Set a service specific callback for dynamic service TXT items.
 	// The callback is called, whenever service TXT items are needed for the given service.
 	MDNS.setDynamicServiceTxtCallback(mdns_service,
@@ -3207,31 +3200,6 @@ void homekit_mdns_init(homekit_server_t *server) {
 	//MDNS.addServiceTxt(HAP_SERVICE, HOMEKIT_MDNS_PROTO, "sf", (server->paired) ? "0" : "1");
 	MDNS.addServiceTxt(mdns_service, "ci", String(server->config->category).c_str());
 
-	/*
-	 // accessory model name (required)
-	 homekit_mdns_add_txt("md", "%s", model->value.string_value);
-	 // protocol version (required)
-	 homekit_mdns_add_txt("pv", "1.0");
-	 // device ID (required)
-	 // should be in format XX:XX:XX:XX:XX:XX, otherwise devices will ignore it
-	 homekit_mdns_add_txt("id", "%s", server->accessory_id);
-	 // current configuration number (required)
-	 homekit_mdns_add_txt("c#", "%d", server->config->config_number);
-	 // current state number (required)
-	 homekit_mdns_add_txt("s#", "1");
-	 // feature flags (required if non-zero)
-	 //   bit 0 - supports HAP pairing. required for all HomeKit accessories
-	 //   bits 1-7 - reserved
-	 homekit_mdns_add_txt("ff", "0");
-	 // status flags
-	 //   bit 0 - not paired
-	 //   bit 1 - not configured to join WiFi
-	 //   bit 2 - problem detected on accessory
-	 //   bits 3-7 - reserved
-	 homekit_mdns_add_txt("sf", "%d", (server->paired) ? 0 : 1);
-	 // accessory category identifier
-	 homekit_mdns_add_txt("ci", "%d", server->config->category);*/
-
 	if (server->config->setupId) {
 		DEBUG("Accessory Setup ID = %s", server->config->setupId);
 
@@ -3255,8 +3223,6 @@ void homekit_mdns_init(homekit_server_t *server) {
 	MDNS.announce();
 	MDNS.update();
 	homekit_mdns_started = true;
-	//INFO("MDNS ok! Open your \"Home\" app, click \"Add or Scan Accessory\""
-	//		" and \"I Don't Have a Code\". \nThis Accessory will show on your iOS device.");
 }
 
 // Used to update the config_number ("c#" value of Bonjour)
@@ -3351,19 +3317,9 @@ void homekit_server_init(homekit_server_config_t *config) {
 	//homekit_server_task(server);
 	INFO("Starting server");
 
-	int r = homekit_storage_init();
-	if (r == 0) {
-		r = homekit_storage_load_accessory_id(server->accessory_id);
-
-		if (!r)
-			r = homekit_storage_load_accessory_key(&server->accessory_key);
-	}
-
-	if (r) {
-		if (r < 0) {
-			INFO("Resetting HomeKit storage");
-			homekit_storage_reset();
-		}
+	if (homekit_storage_init() != 0 ||
+      homekit_storage_load_accessory_id(server->accessory_id) != 0 ||
+      homekit_storage_load_accessory_key(&server->accessory_key) != 0) {
 
 		homekit_accessory_id_generate(server->accessory_id);
 		homekit_storage_save_accessory_id(server->accessory_id);
