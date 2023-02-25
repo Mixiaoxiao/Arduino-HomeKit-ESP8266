@@ -9,7 +9,11 @@ extern "C" {
 
 #include "pairing.h"
 
+bool homekit_storage_magic_valid();
+bool homekit_storage_set_magic();
+
 int homekit_storage_reset();
+int homekit_storage_reset_pairing_data();
 
 int homekit_storage_init();
 

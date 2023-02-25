@@ -19,7 +19,7 @@ typedef unsigned char byte;
 #define HOMEKIT_LOG_DEBUG 3
 
 #ifndef HOMEKIT_LOG_LEVEL
-#define HOMEKIT_LOG_LEVEL HOMEKIT_NO_LOG
+#define HOMEKIT_LOG_LEVEL HOMEKIT_LOG_DEBUG
 #endif
 
 #define HOMEKIT_PRINTF XPGM_PRINTF
