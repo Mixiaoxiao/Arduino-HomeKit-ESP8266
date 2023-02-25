@@ -102,7 +102,10 @@ bool homekit_storage_magic_valid() {
 }
 
 bool homekit_storage_set_magic() {
-    if (!spiflash_write(MAGIC_ADDR, (byte *)hap_magic, sizeof(hap_magic))) {
+    char magic[sizeof(hap_magic)];
+    memcpy(magic, hap_magic, sizeof(magic));
+
+    if (!spiflash_write(MAGIC_ADDR, (byte *)magic, sizeof(magic))) {
         ERROR("Failed to write HomeKit storage magic");
         return false;
     }
