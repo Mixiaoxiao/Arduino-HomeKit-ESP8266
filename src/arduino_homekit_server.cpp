@@ -2329,7 +2329,7 @@ HAPStatus process_characteristics_update(const cJSON *j_ch, client_context_t *co
 
 	cJSON *j_events = cJSON_GetObjectItem(j_ch, "ev");
 	if (j_events) {
-		if (!(ch->permissions && homekit_permissions_notify)) {
+		if (!(ch->permissions & homekit_permissions_notify)) {
 			CLIENT_ERROR(context,
 					"Failed to set notification state for %d.%d: " "notifications are not supported",
 					aid, iid);
