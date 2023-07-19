@@ -98,26 +98,19 @@ bool homekit_storage_set_magic() {
 
 #ifdef HOMEKIT_DEBUG
 static char buf[128];
-static void dump_pairing_data(pairing_data_t *data) {
+static void dump_pairing_data(int index, pairing_data_t *data) {
     if (memcmp(data->magic, hap_magic, sizeof(hap_magic)) || !data->active) return;
 
     char *t = buf;
-    t += sprintf(t, "device_id: %s", data->permissions & pairing_permissions_admin ? "(admin) " : "");
+    t += sprintf(t, "device_id (%d): %s", index, data->permissions & pairing_permissions_admin ? "(admin) " : "");
     for (int i = 0; i < sizeof(data->device_id); i++) {
         t += sprintf(t, "%c", data->device_id[i] > 31 && data->device_id[i] < 128 ? data->device_id[i] : '.');
     }
 
     INFO("%s", buf);
 }
-
-void dump_storage()
+static void _dump_storage(byte *__buf)
 {
-    byte *__buf = malloc(PAIRINGS_OFFSET + (MAX_PAIRINGS * sizeof(pairing_data_t)));
-    if (!spiflash_read(STORAGE_BASE_ADDR, (uint32_t *) __buf, PAIRINGS_OFFSET + (MAX_PAIRINGS * sizeof(pairing_data_t)))) {
-        ERROR("Failed to read the storage sector");
-        free(__buf);
-        return;
-    }
     char *t = buf;
     t += sprintf(t, "dump:");
     for (int i = 0; i < (PAIRINGS_OFFSET + (MAX_PAIRINGS * sizeof(pairing_data_t))); i++) {
@@ -130,6 +123,18 @@ void dump_storage()
         t += sprintf(t, "%02x ", __buf[i]);
     }
     INFO("%s", buf);
+}
+void dump_storage()
+{
+    byte *__buf = malloc(PAIRINGS_OFFSET + (MAX_PAIRINGS * sizeof(pairing_data_t)));
+
+    if (!spiflash_read(STORAGE_BASE_ADDR, (uint32_t *) __buf, PAIRINGS_OFFSET + (MAX_PAIRINGS * sizeof(pairing_data_t)))) {
+        ERROR("Failed to read the storage sector");
+        free(__buf);
+        return;
+    }
+
+    _dump_storage(__buf);
 
     free(__buf);
 }
@@ -157,7 +162,7 @@ int homekit_storage_init(int purge) {
     int paired = 0;
     for (int i = 0; i < MAX_PAIRINGS; i++) {
         spiflash_read(PAIRINGS_ADDR + (sizeof(data) * i), (uint32_t *) &data, sizeof(data));
-        dump_pairing_data(&data);
+        dump_pairing_data(i, &data);
         if (!memcmp(data.magic, hap_magic, sizeof(hap_magic)) && data.active) {
             paired++;
         }
@@ -295,11 +300,11 @@ static int compact_data() {
 
     int next_pairing_idx = 0;
     for (int i = 0; i < MAX_PAIRINGS; i++) {
-        pairing_data_t *data = (pairing_data_t *) &storage[PAIRINGS_OFFSET + (i * sizeof(pairing_data_t))];
-        if (!memcmp(data->magic, hap_magic, sizeof(hap_magic)) && data->active) {
+        pairing_data_t *src = (pairing_data_t *) &storage[PAIRINGS_OFFSET + (i * sizeof(pairing_data_t))];
+        if (!memcmp(src->magic, hap_magic, sizeof(hap_magic)) && src->active) {
             if (i != next_pairing_idx) {
-                memcpy(&storage[PAIRINGS_ADDR + (sizeof(pairing_data_t) * next_pairing_idx)], data, sizeof(*data));
-                memset(&storage[PAIRINGS_ADDR + (sizeof(pairing_data_t) * i)], 0, sizeof(*data));
+                pairing_data_t *dest = (pairing_data_t *) &storage[PAIRINGS_OFFSET + (next_pairing_idx * sizeof(pairing_data_t))];
+                memcpy(dest, src, sizeof(pairing_data_t));
             }
             next_pairing_idx++;
         }
@@ -316,11 +321,21 @@ static int compact_data() {
         free(storage);
         return -2;
     }
-
-    if (!spiflash_write(STORAGE_BASE_ADDR, (uint32_t *) storage, PAIRINGS_OFFSET + (next_pairing_idx * sizeof(pairing_data_t)))) {
-        ERROR("Failed to compact HomeKit storage: error writing compacted storage");
+    if (!spiflash_write(STORAGE_BASE_ADDR, (uint32_t *) storage, PAIRINGS_OFFSET)) {
+        ERROR("Failed to compact HomeKit storage: error writing compacted storage header");
         free(storage);
         return -1;
+    }
+    for (int i = 0; i < next_pairing_idx; i++) {
+        int offset = PAIRINGS_OFFSET + (i * sizeof(pairing_data_t));
+        pairing_data_t *data = (pairing_data_t *) &storage[offset];
+        if (!memcmp(data->magic, hap_magic, sizeof(hap_magic)) && data->active) {
+            if (!spiflash_write(STORAGE_BASE_ADDR + offset, (uint32_t *) &storage[offset], sizeof(pairing_data_t) - 4)) {
+                ERROR("Failed to compact HomeKit storage: error writing compacted storage");
+                free(storage);
+                return -1;
+            }
+        } else break;
     }
 
     free(storage);
