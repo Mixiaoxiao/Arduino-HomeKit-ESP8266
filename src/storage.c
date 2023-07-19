@@ -280,9 +280,9 @@ bool homekit_storage_can_add_pairing() {
     for (int i = 0; i < MAX_PAIRINGS; i++) {
         spiflash_read(PAIRINGS_ADDR + (sizeof(data) * i), (uint32_t *) &data, sizeof(data));
         if (memcmp(data.magic, hap_magic, sizeof(hap_magic)) || !data.active)
-            return i;
+            return true;
     }
-    return -1;
+    return false;
 }
 
 static int compact_data() {
