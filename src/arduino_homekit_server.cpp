@@ -45,7 +45,7 @@
 #define HOMEKIT_SOCKET_KEEPALIVE_INTERVAL_SEC  30
 //const int maxpkt = 4; /* Drop connection after 4 probes without response */
 #define HOMEKIT_SOCKET_KEEPALIVE_IDLE_COUNT     4
-// if 180 + 30 * 4 = 300 sec without socket response, disconected it.
+// if 180 + 30 * 4 = 300 sec without socket response, disconnected it.
 
 // WiFiClient can not write big buff once.
 // TCP_SND_BUF = (2 * TCP_MSS) = 1072. See lwipopts.h
@@ -118,10 +118,10 @@ void server_free(homekit_server_t *server) {
 }
 
 void tlv_debug(const tlv_values_t *values) {
-	DEBUG("Got following TLV values:");
+	printf("Got following TLV values:\n");
 	for (tlv_t *t = values->head; t; t = t->next) {
 		char *escaped_payload = binary_to_string(t->value, t->size);
-		DEBUG("Type %d value (%d bytes): %s", t->type, t->size, escaped_payload);
+		printf("\tType %d value (%d bytes): %s\n", t->type, t->size, escaped_payload);
 		free(escaped_payload);
 	}
 }
@@ -562,7 +562,7 @@ int client_send_encrypted_(client_context_t *context,
 	memset(nonce, 0, sizeof(nonce));
 
 	byte encrypted[1024 + 18];
-	int payload_offset = 0;
+	uint payload_offset = 0;
 
 	while (payload_offset < size) {
 		size_t chunk_size = size - payload_offset;
@@ -1879,7 +1879,7 @@ void homekit_server_on_get_characteristics(client_context_t *context) {
 
 	query_param_t *qp = context->endpoint_params;
 	while (qp) {
-		CLIENT_DEBUG(context, "Query paramter %s = %s", qp->name, qp->value);
+		CLIENT_DEBUG(context, "Query parameter %s = %s", qp->name, qp->value);
 		qp = qp->next;
 	}
 
@@ -2629,6 +2629,7 @@ void homekit_server_on_pairings(client_context_t *context, const byte *data, siz
 					INFO("Last admin pairing was removed, enabling pair setup");
 					context->server->paired = false;
 					//homekit_setup_mdns(context->server);
+					homekit_storage_reset_pairing_data();
 				}
 			}
 		}
@@ -2760,7 +2761,7 @@ int homekit_server_on_url(http_parser *parser, const char *data, size_t length) 
 }
 
 int homekit_server_on_body(http_parser *parser, const char *data, size_t length) {
-	DEBUG("http_parser lenght=%d", length);
+	DEBUG("http_parser length=%d", length);
 	client_context_t *context = (client_context_t*) parser->data;
 	context->body = (char*) realloc(context->body, context->body_length + length + 1);
 	memcpy(context->body + context->body_length, data, length);
@@ -2888,7 +2889,7 @@ void homekit_client_process(client_context_t *context) {
 		}
 		return;
 	}
-	CLIENT_DEBUG(context, "Got %d incomming data, encrypted is %s",
+	CLIENT_DEBUG(context, "Got %d incoming data, encrypted is %s",
 			data_len, context->encrypted ? "true" : "false");
 	byte *payload = (byte*) context->data;
 	size_t payload_size = (size_t) data_len;
@@ -2942,7 +2943,7 @@ void homekit_server_close_client(homekit_server_t *server, client_context_t *con
 
 	if (context->socket) {
 		context->socket->stop();
-		CLIENT_DEBUG(context, "The sockect is stopped");
+		CLIENT_DEBUG(context, "The socket is stopped");
 		delete context->socket;
 		context->socket = nullptr;
 	}
@@ -2979,7 +2980,7 @@ client_context_t* homekit_server_accept_client(homekit_server_t *server) {
 	WiFiClient *wifiClient = nullptr;
 
 	if (server->wifi_server->hasClient()) {
-		wifiClient = new WiFiClient(server->wifi_server->available());
+		wifiClient = new WiFiClient(server->wifi_server->accept());
 		if (server->nfds >= HOMEKIT_MAX_CLIENTS) {
 			INFO("No more room for client connections (max %d)", HOMEKIT_MAX_CLIENTS);
 			wifiClient->stop();
@@ -2990,7 +2991,8 @@ client_context_t* homekit_server_accept_client(homekit_server_t *server) {
 		return NULL;
 	}
 
-	INFO("Got new client: local %s:%d, remote %s:%d",
+	INFO("Got new client %d: local %s:%d, remote %s:%d",
+			wifiClient,
 			wifiClient->localIP().toString().c_str(), wifiClient->localPort(),
 			wifiClient->remoteIP().toString().c_str(), wifiClient->remotePort());
 
@@ -3018,7 +3020,7 @@ client_context_t* homekit_server_accept_client(homekit_server_t *server) {
 void homekit_server_process_notifications(homekit_server_t *server) {
 	client_context_t *context = server->clients;
 	// 把characteristic_event_t拼接成client_event_t链表
-	// 按照Apple的规定，Nofiy消息需合并发送
+	// 按照Apple的规定，Notify消息需合并发送
 	while (context) {
 		if (context->step != HOMEKIT_CLIENT_STEP_PAIR_VERIFY_2OF2) {
 			// Do not send event when the client is not verify over.
@@ -3114,7 +3116,7 @@ void homekit_server_process(homekit_server_t *server) {
 }
 
 //=====================================================
-// Arduino ESP8266 MDNS: call this funciton only once when WiFi STA is connected!
+// Arduino ESP8266 MDNS: call this function only once when WiFi STA is connected!
 //=====================================================
 bool homekit_mdns_started = false;
 
@@ -3145,7 +3147,7 @@ void homekit_mdns_init(homekit_server_t *server) {
 		ERROR("Invalid accessory declaration: " "no Name characteristic in AccessoryInfo service");
 		return;
 	}
- 
+
 	homekit_characteristic_t *model = homekit_service_characteristic_by_type(accessory_info,
     HOMEKIT_CHARACTERISTIC_MODEL);
 
@@ -3215,7 +3217,6 @@ void homekit_mdns_init(homekit_server_t *server) {
 
 		unsigned char encodedHash[9];
 		memset(encodedHash, 0, sizeof(encodedHash));
-		word32 len = sizeof(encodedHash);
 		base64_encode_((const unsigned char*) shaHash, 4, encodedHash);
 		MDNS.addServiceTxt(mdns_service, "sh", (char*) encodedHash);
 	}
@@ -3317,7 +3318,7 @@ void homekit_server_init(homekit_server_config_t *config) {
 	//homekit_server_task(server);
 	INFO("Starting server");
 
-	if (homekit_storage_init() != 0 ||
+	if (homekit_storage_init(false) != 0 ||
       homekit_storage_load_accessory_id(server->accessory_id) != 0 ||
       homekit_storage_load_accessory_key(&server->accessory_key) != 0) {
 
@@ -3399,11 +3400,11 @@ int homekit_get_setup_uri(const homekit_server_config_t *config, char *buffer, s
 
 	if (!config->password)
 		return -1;
-	// TODO: validate password in case it is run beffore server is started
+	// TODO: validate password in case it is run before server is started
 
 	if (!config->setupId)
 		return -1;
-	// TODO: validate setupID in case it is run beffore server is started
+	// TODO: validate setupID in case it is run before server is started
 
 	homekit_accessory_t *accessory = homekit_accessory_by_id(config->accessories, 1);
 	if (!accessory)
@@ -3445,8 +3446,8 @@ int homekit_get_setup_uri(const homekit_server_config_t *config, char *buffer, s
 	return 0;
 }
 
-// Pre-initialize the pairing_context used in Pair-Setep 1/3
-// For avoiding timeout caused sockect disconnection from iOS device.
+// Pre-initialize the pairing_context used in Pair-Setup 1/3
+// For avoiding timeout caused socket disconnection from iOS device.
 bool arduino_homekit_preinit(homekit_server_t *server) {
 	if (saved_preinit_pairing_context != nullptr) {
 		return true;
