@@ -9,9 +9,13 @@ extern "C" {
 
 #include "pairing.h"
 
-int homekit_storage_reset();
+bool homekit_storage_magic_valid();
+bool homekit_storage_set_magic();
 
-int homekit_storage_init();
+int homekit_storage_reset();
+int homekit_storage_reset_pairing_data();
+
+int homekit_storage_init(int purge);
 
 void homekit_storage_save_accessory_id(const char *accessory_id);
 int homekit_storage_load_accessory_id(char *data);
