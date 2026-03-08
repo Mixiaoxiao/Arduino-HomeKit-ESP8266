@@ -394,6 +394,11 @@ int mp_grow (mp_int * a, int size)
   int     i;
   mp_digit *tmp;
 
+  if (size < 0) {
+    return MP_VAL;
+  }
+
+
   /* if the alloc size is smaller alloc more ram */
   if (a->alloc < size || size == 0) {
     /* ensure there are always at least MP_PREC digits extra on top */
@@ -694,6 +699,10 @@ int mp_mul_2d (mp_int * a, int b, mp_int * c)
 {
   mp_digit d;
   int      res;
+
+  if (b < 0) {
+    return MP_VAL;
+  }
 
   /* copy */
   if (a != c) {
@@ -2658,6 +2667,10 @@ int mp_set_bit (mp_int * a, int b)
  */
 int mp_2expt (mp_int * a, int b)
 {
+    if (b < 0) {
+      return MP_VAL;
+    }
+
     /* zero a as per default */
     mp_zero (a);
 
@@ -2974,6 +2987,10 @@ int mp_div_3 (mp_int * a, mp_int *c, mp_digit * d)
 /* init an mp_init for a given size */
 int mp_init_size (mp_int * a, int size)
 {
+  if (size < 0) {
+    return MP_VAL;
+  }
+
   int x;
 
   /* pad size so there are always extra digits */
@@ -3295,6 +3312,10 @@ int s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
   mp_digit u;
   mp_word r;
   mp_digit tmpx, *tmpt, *tmpy;
+
+  if (digs < 0) {
+    return MP_VAL;
+  }
 
   /* can we use the fast multiplier? */
   if (((digs) < MP_WARRAY) &&
@@ -3811,6 +3832,10 @@ int s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
   mp_digit u;
   mp_word r;
   mp_digit tmpx, *tmpt, *tmpy;
+
+  if (digs < 0) {
+    return MP_VAL;
+  }
 
   /* can we use the fast multiplier? */
 #ifdef BN_FAST_S_MP_MUL_HIGH_DIGS_C
